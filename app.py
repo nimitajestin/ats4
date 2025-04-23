@@ -45,7 +45,7 @@ st.set_page_config(page_title="Verq ATS Evaluator", layout="centered")
 # Brand header
 st.markdown("""
     <div style="text-align: center;">
-        <h1 style="font-size: 3em; color: #4B8BBE; margin-bottom: 0;">🚀 Verq</h1>
+        <h1 style="font-size: 3em; color: #4B8BBE; margin-bottom: 0;">Verq</h1>
         <p style="font-size: 1.2em; color: #666;">Helping Computer Science students craft optimized, job-ready resumes for the tech industry's best opportunities.</p>
     </div>
     <br>
