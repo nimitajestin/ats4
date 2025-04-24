@@ -1,0 +1,174 @@
+import streamlit as st
+import os
+import PyPDF2 as pdf
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Initialize OpenAI client
+client = OpenAI(api_key="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")
+
+# Function to get response from OpenAI's GPT model
+def get_openai_response(input_text):
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": input_text}
+        ],
+        max_tokens=1000
+    )
+    return response.choices[0].message.content.strip()
+
+# Function to extract text from uploaded PDF
+def extract_pdf_text(uploaded_file):
+    reader = pdf.PdfReader(uploaded_file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+# Function to get ATS feedback based on resume and job description
+def get_ats_feedback(resume_text, jd_text):
+    prompt = f""" 
+    Act as an expert ATS (Application Tracking System) for the tech industry.
+    Evaluate the resume below against the job description and return a JSON response with:
+    - JD Match (as percentage),
+    - List of Missing Keywords,
+    - A brief but insightful Profile Summary.
+
+    Resume: {resume_text}
+    Job Description: {jd_text}
+
+    Format:
+    {{
+        "JD Match": "85%",
+        "MissingKeywords": ["Python", "Cloud Computing"],
+        "Profile Summary": "Strong backend skills with exposure to databases and APIs..."
+    }}
+    """
+    response = get_openai_response(prompt)
+    return response
+
+# ---- Streamlit App ----
+st.set_page_config(page_title="Verq ATS Evaluator", layout="centered")
+
+# Brand header
+st.markdown("""
+    <div style="text-align: center;">
+        <h1 style="font-size: 3em; color: #4B8BBE; margin-bottom: 0;">Verq</h1>
+        <p style="font-size: 1.2em; color: #666;">Helping Computer Science students craft optimized, job-ready resumes for the tech industry's best opportunities.</p>
+    </div>
+    <br>
+""", unsafe_allow_html=True)
+
+st.markdown("##  ATS Resume Evaluator")
+st.markdown("Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.")
+
+# Input columns
+with st.container():
+    col1, col2 = st.columns(2)
+
+    with col1:
+        jd_input = st.text_area(" Job Description", height=300, placeholder="Paste the JD here...")
+
+    with col2:
+        uploaded_resume = st.file_uploader(" Upload Resume (PDF)", type=["pdf"])
+
+# Submit button
+if st.button(" Evaluate"):
+    if uploaded_resume and jd_input.strip():
+        with st.spinner("Analyzing Resume..."):
+            resume_text = extract_pdf_text(uploaded_resume)
+            ats_response = getimport streamlit as st
+import os
+import PyPDF2 as pdf
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Initialize OpenAI client
+client = OpenAI(api_key="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")
+
+# Function to get response from OpenAI's GPT model
+def get_openai_response(input_text):
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": input_text}
+        ],
+        max_tokens=1000
+    )
+    return response.choices[0].message.content.strip()
+
+# Function to extract text from uploaded PDF
+def extract_pdf_text(uploaded_file):
+    reader = pdf.PdfReader(uploaded_file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+# Function to get ATS feedback based on resume and job description
+def get_ats_feedback(resume_text, jd_text):
+    prompt = f""" 
+    Act as an expert ATS (Application Tracking System) for the tech industry.
+    Evaluate the resume below against the job description and return a JSON response with:
+    - JD Match (as percentage),
+    - List of Missing Keywords,
+    - A brief but insightful Profile Summary.
+
+    Resume: {resume_text}
+    Job Description: {jd_text}
+
+    Format:
+    {{
+        "JD Match": "85%",
+        "MissingKeywords": ["Python", "Cloud Computing"],
+        "Profile Summary": "Strong backend skills with exposure to databases and APIs..."
+    }}
+    """
+    response = get_openai_response(prompt)
+    return response
+
+# ---- Streamlit App ----
+st.set_page_config(page_title="Verq ATS Evaluator", layout="centered")
+
+# Brand header
+st.markdown("""
+    <div style="text-align: center;">
+        <h1 style="font-size: 3em; color: #4B8BBE; margin-bottom: 0;">Verq</h1>
+        <p style="font-size: 1.2em; color: #666;">Helping Computer Science students craft optimized, job-ready resumes for the tech industry's best opportunities.</p>
+    </div>
+    <br>
+""", unsafe_allow_html=True)
+
+st.markdown("##  ATS Resume Evaluator")
+st.markdown("Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.")
+
+# Input columns
+with st.container():
+    col1, col2 = st.columns(2)
+
+    with col1:
+        jd_input = st.text_area(" Job Description", height=300, placeholder="Paste the JD here...")
+
+    with col2:
+        uploaded_resume = st.file_uploader(" Upload Resume (PDF)", type=["pdf"])
+
+# Submit button
+if st.button(" Evaluate"):
+    if uploaded_resume and jd_input.strip():
+        with st.spinner("Analyzing Resume..."):
+            resume_text = extract_pdf_text(uploaded_resume)
+            ats_response = get_ats_feedback(resume_text, jd_input)
+
+        st.markdown("---")
+        st.markdown("###  ATS Evaluation Results")
+        st.code(ats_response, language='json')
+    else:
+        st.warning("Please upload a resume and enter a job description.")
+_ats_feedback(resume_text, jd_input)
+
+        st.markdown("---")
+        st.markdown("###  ATS Evaluation Results")
+        st.code(ats_response, language='json')
+    else:
+        st.warning("Please upload a resume and enter a job description.")
