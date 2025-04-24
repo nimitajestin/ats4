@@ -1,13 +1,12 @@
 import streamlit as st
 
-# Configure Streamlit page
 st.set_page_config(
     page_title="Verq ATS Evaluator",
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better UI
+
 st.markdown("""
 <style>
     .stApp {
@@ -28,7 +27,7 @@ import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 
-# Skill categories for better analysis
+
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
     'Web Technologies': ['html', 'html5', 'css', 'css3', 'react', 'reactjs', 'angular', 'vue', 'nodejs', 'node.js', 'django', 'flask', 'express', 'jquery', 'bootstrap', 'sass', 'less', 'webpack', 'vite', 'nextjs', 'graphql', 'rest api', 'restful'],
@@ -38,7 +37,6 @@ SKILL_CATEGORIES = {
     'Soft Skills': ['leadership', 'communication', 'teamwork', 'team player', 'problem solving', 'analytical', 'project management', 'agile', 'scrum', 'time management', 'collaboration', 'critical thinking', 'attention to detail', 'multitasking']
 }
 
-# Education related terms
 EDUCATION_TERMS = [
     'bachelor', 'master', 'phd', 'degree', 
     'b.tech', 'b.e', 'm.tech', 'bsc', 'msc',
@@ -50,7 +48,7 @@ EDUCATION_TERMS = [
     'gpa', 'cgpa', 'grade', 'honors', 'distinction'
 ]
 
-# Download required NLTK data
+
 @st.cache_resource
 def download_nltk_data():
     try:
@@ -65,69 +63,61 @@ def download_nltk_data():
         with st.spinner('Downloading required language data (stopwords)...'):
             nltk.download('stopwords')
 
-# Download NLTK data
 download_nltk_data()
 
-# Function to get response from OpenAI's GPT model
 @st.cache_data
 def extract_skills_and_keywords(text):
-    # Convert to lowercase
     text = text.lower()
     
-    # First, look for exact matches of multi-word skills
     categorized_skills = {category: [] for category in SKILL_CATEGORIES}
     
-    # Look for exact matches first (especially for multi-word terms)
     for category, skills in SKILL_CATEGORIES.items():
         for skill in skills:
             if ' ' in skill:  # Multi-word skill
                 if skill in text:
                     categorized_skills[category].append(skill)
     
-    # Now process individual words
-    # Split on whitespace and remove punctuation
     words = [word.strip('.,!?()[]{}:;"\'') for word in text.split()]
     words = [word for word in words if word]
-    
-    # Remove stopwords
+
     stop_words = set(stopwords.words('english'))
     words = [word for word in words if word.isalnum() and word not in stop_words]
     
-    # Extract common technical terms and skills (2-gram phrases)
+ 
     phrases = []
     for i in range(len(words)-1):
         phrase = f"{words[i]} {words[i+1]}"
         phrases.append(phrase)
     
-    # Combine single words and phrases
+  
     all_terms = words + phrases
     
-    # Get terms by frequency
+
     term_freq = Counter(all_terms)
     terms = [term for term, freq in term_freq.most_common(50)]
     
-    # Add single-word skills to categories
+
     for category, skills in SKILL_CATEGORIES.items():
         single_word_matches = [term for term in terms 
                              if term in skills and term not in categorized_skills[category]]
         categorized_skills[category].extend(single_word_matches)
     
-    # Remove empty categories
+
     categorized_skills = {k: v for k, v in categorized_skills.items() if v}
     
     return terms, categorized_skills
 
 def calculate_match_percentage(resume_text, jd_text):
-    # Use TF-IDF vectorization for better matching
+
     vectorizer = TfidfVectorizer()
     try:
         tfidf_matrix = vectorizer.fit_transform([resume_text, jd_text])
         similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
         return round(similarity * 100, 1)
     except:
-        return 50  # Default fallback value
+        return 50  
 
-# Function to extract text from uploaded PDF
+
 def extract_pdf_text(uploaded_file):
     reader = pdf.PdfReader(uploaded_file)
     text = ""
@@ -135,26 +125,25 @@ def extract_pdf_text(uploaded_file):
         text += page.extract_text()
     return text
 
-# Function to get ATS feedback based on resume and job description
 def analyze_education(text):
     text_lower = text.lower()
     
-    # First look for education-related sentences
+
     sentences = text_lower.split('.')
     edu_sentences = [s.strip() for s in sentences if any(term in s for term in EDUCATION_TERMS)]
     
-    # Look for CS/IT related education
+
     is_cs = any(term in text_lower for term in ['computer science', 'cs', 'information technology', 'it', 'software engineering'])
     
-    # Get the most relevant education sentence
+   
     if edu_sentences:
         main_edu = edu_sentences[0]
-        # Add CS/IT indicator if found
+    
         if is_cs and 'computer science' not in main_edu and 'cs' not in main_edu:
             main_edu += ' (Computer Science/IT background)'
         return main_edu
     
-    # If no clear education sentence but CS/IT terms found
+  
     if is_cs:
         return "Computer Science/IT background detected"
     
@@ -163,8 +152,7 @@ def analyze_education(text):
 def analyze_experience(text):
     text_lower = text.lower()
     sentences = [s.strip() for s in text_lower.split('.')]
-    
-    # Look for different types of experience
+
     experiences = {
         'work': [],
         'projects': [],
@@ -179,7 +167,6 @@ def analyze_experience(text):
         elif 'intern' in sentence:
             experiences['internships'].append(sentence)
     
-    # Determine experience level
     years_exp = 0
     for sentence in experiences['work']:
         year_matches = re.findall(r'\d+\+?\s*(?:year|yr)', sentence)
@@ -203,7 +190,7 @@ def analyze_experience(text):
     return ' | '.join(experience_summary) if experience_summary else ""
 
 def get_key_strengths(resume_keywords, jd_keywords):
-    # Find matching keywords (strengths)
+
     strengths = list(set(resume_keywords) & set(jd_keywords))
     return sorted(strengths, key=lambda x: len(x), reverse=True)[:5]
 
@@ -225,24 +212,20 @@ def analyze_achievements(text):
 
 @st.cache_data
 def get_ats_feedback(resume_text, jd_text):
-    # Extract keywords from both texts
+
     resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
     jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
     
-    # Find missing keywords and strengths
     missing_keywords = list(set(jd_keywords) - set(resume_keywords))
     key_strengths = get_key_strengths(resume_keywords, jd_keywords)
     
-    # Calculate match percentage
     match_percentage = calculate_match_percentage(resume_text, jd_text)
     
-    # Get detailed analysis
     education = analyze_education(resume_text)
     experience = analyze_experience(resume_text)
     projects = analyze_projects(resume_text)
     achievements = analyze_achievements(resume_text)
-    
-    # Generate a contextual profile summary
+
     profile_parts = []
     if education:
         profile_parts.append(education.strip().capitalize())
@@ -250,7 +233,6 @@ def get_ats_feedback(resume_text, jd_text):
         profile_parts.append(experience)
     profile_summary = ' | '.join(profile_parts)
     
-    # Analyze skill gaps by category
     skill_gaps = {}
     for category in SKILL_CATEGORIES:
         jd_skills = set(jd_categories.get(category, []))
@@ -258,7 +240,6 @@ def get_ats_feedback(resume_text, jd_text):
         if jd_skills:
             skill_gaps[category] = list(jd_skills - resume_skills)
     
-    # Calculate category-wise match percentages
     category_matches = {}
     for category in SKILL_CATEGORIES:
         jd_skills = set(jd_categories.get(category, []))
@@ -267,16 +248,13 @@ def get_ats_feedback(resume_text, jd_text):
             match = len(jd_skills & resume_skills) / len(jd_skills) * 100
             category_matches[category] = round(match, 1)
     
-    # Generate personalized recommendations based on actual content
     recommendations = []
     
-    # Education-based recommendations
     if not education:
         recommendations.append("Add your educational background prominently")
     elif 'computer science' in education.lower() or 'cs' in education.lower():
         recommendations.append("Your CS background is relevant - highlight any specialized coursework or projects")
     
-    # Experience-based recommendations
     if not experience:
         recommendations.append("Add any internships, projects, or relevant work experience")
     elif 'internship' in experience.lower():
@@ -284,31 +262,26 @@ def get_ats_feedback(resume_text, jd_text):
     elif any(str(i) in experience.lower() for i in range(1, 6)):
         recommendations.append("Highlight leadership roles and team contributions in your experience")
     
-    # Project-based recommendations
     if not projects:
         recommendations.append("Add relevant projects showcasing your technical skills")
     elif len(projects) < 3:
         recommendations.append("Consider adding more projects demonstrating your expertise")
     
-    # Achievement-based recommendations
     if not achievements:
         recommendations.append("Add quantifiable achievements and metrics to strengthen your impact")
     
-    # Skill-based recommendations
     tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'Cloud & DevOps']
     missing_tech = [cat for cat in tech_categories if cat in skill_gaps and skill_gaps[cat]]
     
     if missing_tech:
-        for category in missing_tech[:2]:  # Limit to top 2 categories
-            gaps = skill_gaps[category][:3]  # Limit to top 3 skills
+        for category in missing_tech[:2]: 
+            gaps = skill_gaps[category][:3]  
             if gaps:
                 recommendations.append(f"Add {category} skills: {', '.join(gaps)}")
-    
-    # Format-based recommendations
+   
     if len(resume_text.split()) < 200:
         recommendations.append("Your resume seems concise - consider adding more detail to your experiences")
     
-    # Create detailed response
     response = {
         "JD Match": f"{match_percentage}%",
         "Profile Summary": profile_summary,
@@ -374,7 +347,6 @@ if st.button(" Evaluate"):
             st.markdown("### Profile Summary")
             st.info(results['Profile Summary'])
             
-            # Education and Experience
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### Education")
@@ -383,7 +355,6 @@ if st.button(" Evaluate"):
                 st.markdown("### Experience")
                 st.write(results['Experience'])
             
-            # Projects and Achievements
             if results['Projects'] or results['Achievements']:
                 st.markdown("### Key Highlights")
                 
@@ -409,11 +380,9 @@ if st.button(" Evaluate"):
                 with col2:
                     st.markdown(f"<h4 style='color: {progress_color}'>{match}%</h4>", unsafe_allow_html=True)
                 
-                # Show skill gaps if any
                 if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
                     st.caption(f"Missing: {', '.join(results['Skill Gaps'][category])}")
             
-            # Key Strengths and Missing Keywords
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### Key Strengths")
@@ -430,7 +399,6 @@ if st.button(" Evaluate"):
             for i, rec in enumerate(results['Recommendations'], 1):
                 st.markdown(f"{i}. {rec}")
             
-            # Additional Tips
             st.markdown("### Pro Tips")
             st.info("""
             - Use industry-standard section headings
