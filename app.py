@@ -465,24 +465,34 @@ if st.button(" Evaluate"):
                 st.markdown("### ATS Evaluation Results")
                 
                 try:
+                    # Ensure results is a dictionary
                     if isinstance(ats_response, str):
                         results = json.loads(ats_response)
-                    else:
+                    elif isinstance(ats_response, dict):
                         results = ats_response
+                    else:
+                        st.error("Invalid response format")
+                        return
                         
-                    # Safely handle match percentage with default value
-                    match_str = results.get('JD Match', '0%')
+                    # Safely get match percentage with validation
+                    if not isinstance(results, dict):
+                        st.error("Results must be a dictionary")
+                        return
+                        
+                    match_str = str(results.get('JD Match', '0%'))
                     try:
                         match_pct = float(match_str.strip('%'))
-                    except ValueError:
+                    except (ValueError, AttributeError):
                         match_pct = 0.0
                         match_str = '0%'
-                    
+                        
                     color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
                     st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_str}</h2>", 
                                unsafe_allow_html=True)
+                    
+                    # Rest of the display logic...
                 except Exception as e:
-                    st.error(f"Error displaying results: {str(e)}")
+                    st.error(f"Error processing results: {str(e)}")
         
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
