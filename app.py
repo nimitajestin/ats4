@@ -283,6 +283,43 @@ def analyze_achievements(text):
     achievements = [s for s in sentences if any(word in s.lower() for word in achievement_words)]
     return achievements
 
+def generate_recommendations(resume_data, jd_data, matched_skills, skill_gaps):
+    """Generate personalized recommendations based on resume analysis"""
+    recommendations = []
+    
+    # 1. Skill development recommendations
+    for category, gaps in skill_gaps.items():
+        if gaps:
+            if category in ['Programming Languages', 'Web Technologies']:
+                rec = f"Develop {category.lower()} skills: Consider learning {gaps[0]} through online courses " \
+                      f"or projects. Resources: " \
+                      f"{'Udemy' if 'python' in gaps[0].lower() else 'Codecademy' if 'javascript' in gaps[0].lower() else 'Coursera'}"
+            elif category == 'Database':
+                rec = f"Gain {gaps[0]} experience: Try building a small project using {gaps[0]} " \
+                      f"with a frontend framework you know."
+            elif category == 'DevOps':
+                rec = f"Learn {gaps[0]}: Set up a CI/CD pipeline or containerize an existing project " \
+                      f"to gain hands-on experience."
+            else:
+                rec = f"Improve {category.lower()} skills: Focus on developing {gaps[0]}"
+            recommendations.append(rec)
+    
+    # 2. Project suggestions based on existing skills
+    strong_skills = [skill for skills in matched_skills.values() for skill in skills]
+    if strong_skills:
+        if 'python' in strong_skills and 'django' in strong_skills:
+            recommendations.append("Build a Django web app to showcase your full-stack Python skills")
+        if 'javascript' in strong_skills and 'react' in strong_skills:
+            recommendations.append("Create a React portfolio project to demonstrate modern frontend skills")
+    
+    # 3. Resume improvement tips
+    if not resume_data.get('Projects', []):
+        recommendations.append("Add projects section: Include 2-3 relevant projects with technologies used")
+    if not resume_data.get('Achievements', []):
+        recommendations.append("Highlight achievements: Quantify your impact (e.g. 'Improved performance by X%')")
+    
+    return recommendations[:5]  # Return top 5 most relevant recommendations
+
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
     try:
@@ -337,7 +374,7 @@ def get_ats_feedback(resume_text, jd_text):
             "Category Matches": category_scores,
             "Skill Gaps": skill_gaps,
             "Matched Skills": matched_skills,
-            "Recommendations": recommendations
+            "Recommendations": generate_recommendations({"Projects": analyze_projects(resume_text), "Achievements": analyze_achievements(resume_text)}, jd_text, matched_skills, skill_gaps)
         }
     except Exception as e:
         st.error(f"Error in text processing: {str(e)}")
