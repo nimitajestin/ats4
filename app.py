@@ -452,18 +452,18 @@ if st.button(" Evaluate"):
             resume_text = extract_text_from_pdf(uploaded_resume)
             if not resume_text:
                 st.error("Failed to extract text from PDF")
-                return
-            
+                st.stop()
+                
             resume_text = preprocess_text(resume_text)
             if not resume_text:
                 st.error("Failed to process resume text")
-                return
-            
+                st.stop()
+                
             ats_response = get_ats_feedback(resume_text, jd_input)
             if not ats_response:
                 st.error("Failed to generate ATS feedback")
-                return
-            
+                st.stop()
+                
             st.markdown("---")
             st.markdown("### ATS Evaluation Results")
         
