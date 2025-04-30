@@ -721,7 +721,7 @@ if st.button(" Evaluate"):
             if ats_response:
                 st.markdown("---")
                 st.markdown("###  ATS Evaluation Results")
-        
+    
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
             try:
@@ -733,10 +733,25 @@ if st.button(" Evaluate"):
             results = ats_response
         
         try:
-            # Display enhanced results
-            display_enhanced_results(results)
+            # Display basic results
+            st.markdown(f"#### Overall Match: {results.get('JD Match', '0%')}")
+            
+            # Show key strengths and missing keywords
+            st.markdown("##### Key Strengths")
+            for strength in results.get('Key Strengths', [])[:5]:
+                st.markdown(f"- {strength}")
+                
+            st.markdown("##### Areas for Improvement")
+            for keyword in results.get('Missing Keywords', [])[:5]:
+                st.markdown(f"- {keyword}")
+                
+            # Show basic recommendations
+            if results.get('Recommendations'):
+                st.markdown("##### Recommendations")
+                for rec in results['Recommendations'][:3]:
+                    st.markdown(f"- {rec}")
+                    
         except Exception as e:
             st.error(f"Error displaying results: {str(e)}")
-    # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
