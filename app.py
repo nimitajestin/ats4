@@ -7,75 +7,44 @@ from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
 
-import nltk
-from nltk.tokenize import word_tokenize  
-from nltk.corpus import stopwords
-
-# Download required NLTK data
-@st.cache_resource
-def download_nltk_data():
-    """Download required NLTK data"""
-    try:
-        # Create NLTK data directory if it doesn't exist
-        nltk_data_dir = os.path.expanduser('~/nltk_data')
-        if not os.path.exists(nltk_data_dir):
-            os.makedirs(nltk_data_dir)
-        
-        # Download required packages
-        packages = ['punkt', 'stopwords']
-        for package in packages:
-            try:
-                nltk.data.find(f'tokenizers/{package}')
-            except LookupError:
-                with st.spinner(f'Downloading {package}...'):
-                    nltk.download(package, quiet=True)
-        return True
-    except Exception as e:
-        st.error(f'Error downloading NLTK data: {str(e)}')
-        return False
-
-# Initialize NLTK resources
-if not download_nltk_data():
-    st.error('Failed to download required NLTK data. Please try refreshing the page.')
-    st.stop()
-
-# Helper function for text tokenization
-def tokenize_text(text):
-    """Tokenize text using NLTK word_tokenize"""
-    try:
-        return word_tokenize(text.lower())
-    except Exception as e:
-        # Fallback to simple word splitting if NLTK fails
-        return text.lower().split()
-
-# Helper function for sentence splitting
-def split_into_sentences(text):
-    """Split text into sentences using regex"""
-    # Clean up the text first
-    text = re.sub(r'\s+', ' ', text)
-    # Split on common sentence endings
-    sentences = re.split(r'[.!?]+(?=\s|[A-Z]|$)', text)
-    # Clean and filter sentences
-    return [s.strip() for s in sentences if s.strip()]
-
-# Custom text processing functions
+# Text processing utilities
 def clean_text(text):
     """Clean and normalize text"""
     # Convert to lowercase
     text = text.lower()
-    # Replace multiple spaces with single space
-    text = re.sub(r'\s+', ' ', text)
-    # Replace newlines with space
-    text = re.sub(r'\n+', ' ', text)
+    # Replace multiple spaces and newlines with single space
+    text = re.sub(r'[\s\n]+', ' ', text)
+    # Remove special characters but keep alphanumeric and spaces
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)
     return text.strip()
 
-def tokenize_words(text):
-    """Split text into words using regex"""
-    # Clean the text first
+def tokenize_text(text):
+    """Split text into words"""
     text = clean_text(text)
     # Split into words (alphanumeric sequences)
-    words = re.findall(r'\b\w+\b', text.lower())
+    words = re.findall(r'\b[a-z0-9]+\b', text)
     return [w for w in words if w and len(w) > 1]  # Filter out single characters
+
+def split_into_sentences(text):
+    """Split text into sentences"""
+    # First clean up obvious sentence boundaries
+    text = re.sub(r'([.!?])\s*([A-Za-z])', r'\1\n\2', text)
+    # Split on newlines and filter empty strings
+    sentences = [s.strip() for s in text.split('\n')]
+    return [s for s in sentences if s]
+
+# Common English stop words
+STOP_WORDS = {
+    'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
+    "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
+    'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 
+    'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
+    'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 
+    'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 
+    'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
+    'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 
+    'under', 'again', 'further', 'then', 'once'
+}
 
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
@@ -102,18 +71,6 @@ EDUCATION_TERMS = [
     'university', 'college', 'institute',
     'gpa', 'cgpa', 'grade', 'honors', 'distinction'
 ]
-
-
-# Common English stop words
-STOP_WORDS = {'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
-              "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
-              'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 
-              'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
-              'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 
-              'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 
-              'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
-              'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 
-              'under', 'again', 'further', 'then', 'once'}
 
 def extract_skills_and_keywords(text):
     text = text.lower()
@@ -172,7 +129,7 @@ def extract_skills_and_keywords(text):
                     )
     
     stop_words = STOP_WORDS
-    words = tokenize_words(text)
+    words = tokenize_text(text)
     words = [word for word in words if word.lower() not in stop_words]
     
     bigrams = [' '.join(pair) for pair in zip(words[:-1], words[1:])]
@@ -221,7 +178,7 @@ def calculate_match_percentage(resume_text, jd_text):
         
         def preprocess_text(text):
             text = text.lower()
-            text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
+            text = re.sub(r'[^a-z0-9\s]', ' ', text)
             stop_words = STOP_WORDS
             words = [w for w in text.split() if w not in stop_words]
             return ' '.join(words)
