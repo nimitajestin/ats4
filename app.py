@@ -502,6 +502,19 @@ if st.button(" Evaluate"):
             results = json.loads(ats_response)
         else:
             results = ats_response
+            
+        # Ensure all expected fields exist with defaults
+        results.setdefault('Profile Summary', '')
+        results.setdefault('Education', '')
+        results.setdefault('Experience', '')
+        results.setdefault('Projects', [])
+        results.setdefault('Achievements', [])
+        results.setdefault('Match Percentage', 0)
+        results.setdefault('Skill Gaps', {})
+        results.setdefault('Strong Skills', {})
+        
+        # Combine with extracted sections
+        results.update(resume_sections)
         
         # Safely handle match percentage
         match_str = results.get('JD Match', '0%')
