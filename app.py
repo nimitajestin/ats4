@@ -441,8 +441,11 @@ if st.button(" Evaluate"):
                 st.markdown("---")
                 st.markdown("###  ATS Evaluation Results")
         
-        # Convert JSON response to Python dictionary
-        results = json.loads(ats_response)
+        # Handle case where response is already parsed or needs parsing
+        if isinstance(ats_response, str):
+            results = json.loads(ats_response)
+        else:
+            results = ats_response
         
         # Display match percentage with color coding
         # Green: ≥80%, Orange: ≥60%, Red: <60%
