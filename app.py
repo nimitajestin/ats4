@@ -724,15 +724,17 @@ if st.button(" Evaluate"):
         
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
-            results = json.loads(ats_response)
+            try:
+                results = json.loads(ats_response)
+            except json.JSONDecodeError:
+                st.error("Failed to parse analysis results")
+                return
         else:
             results = ats_response
         
         try:
             # Display enhanced results
             display_enhanced_results(results)
-        except json.JSONDecodeError:
-            st.error("Failed to parse analysis results")
         except Exception as e:
             st.error(f"Error displaying results: {str(e)}")
     # Show warning if inputs are missing
