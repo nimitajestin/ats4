@@ -315,62 +315,51 @@ def generate_recommendations(resume_data, jd_data, matched_skills, skill_gaps):
     return recommendations[:5]  # Return top 5 most relevant recommendations
 
 def extract_resume_sections(text):
-    """Safely extract resume sections with comprehensive error handling"""
-    # Default empty sections
+    """Enhanced section extraction with better pattern matching"""
     sections = {
-        'profile': '',
-        'experience': '', 
-        'education': '',
-        'projects': '',
-        'achievements': ''
+        'Profile Summary': '',
+        'Education': '', 
+        'Experience': '',
+        'Projects': '',
+        'Achievements': ''
     }
     
-    try:
-        # Validate input
-        if not text or not isinstance(text, str):
-            return sections
+    if not text:
+        return sections
+        
+    # Normalize text for better matching
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Define section patterns with multiple possible headers
+    patterns = {
+        'Profile Summary': [r'SUMMARY', r'PROFILE', r'ABOUT', r'OBJECTIVE'],
+        'Education': [r'EDUCATION', r'ACADEMICS', r'QUALIFICATIONS'],
+        'Experience': [r'EXPERIENCE', r'WORK HISTORY', r'EMPLOYMENT'],
+        'Projects': [r'PROJECTS', r'KEY PROJECTS', r'NOTABLE PROJECTS'],
+        'Achievements': [r'ACHIEVEMENTS', r'ACCOMPLISHMENTS', r'KEY ACHIEVEMENTS']
+    }
+    
+    current_section = None
+    
+    for line in text.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
             
-        # Normalize text
-        text = text.strip()
-        if not text:
-            return sections
-            
-        # Split into lines safely
-        lines = text.split('\n')
-        
-        # Section patterns (simplified for reliability)
-        patterns = {
-            'profile': r'(summary|profile|about|objective)',
-            'experience': r'(experience|work history|employment)',
-            'education': r'(education|academics|qualifications)',
-            'projects': r'(projects|key projects|notable projects)',
-            'achievements': r'(achievements|accomplishments|key achievements)'
-        }
-        
-        current_section = None
-        
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
+        # Check for section headers
+        for section, section_patterns in patterns.items():
+            if any(re.search(pattern, line, re.IGNORECASE) for pattern in section_patterns):
+                current_section = section
+                break
                 
-            # Check for new section
-            for section, pattern in patterns.items():
-                if re.search(pattern, line, re.IGNORECASE):
-                    current_section = section
-                    break
-                    
-            # Add content to current section
-            if current_section:
-                sections[current_section] += f"{line}\n"
-                
-        # Clean up sections
-        for section in sections:
-            sections[section] = sections[section].strip()
+        # Add content to current section
+        if current_section and line:
+            sections[current_section] += f"{line}\n"
             
-    except Exception as e:
-        st.warning(f"Section extraction warning: {str(e)}")
-        
+    # Clean up sections
+    for section in sections:
+        sections[section] = sections[section].strip()
+    
     return sections
 
 @st.cache_data 
@@ -504,23 +493,18 @@ if st.button(" Evaluate"):
         
         # Tab 1: Overview - Display basic profile information
         with tab1:
-            with st.expander("Overview", expanded=True):
-                if 'Profile Summary' in results and results['Profile Summary']:
-                    st.subheader("Profile Summary")
-                    st.write(results['Profile Summary'])
-                
-                if 'Education' in results and results['Education']:
-                    st.subheader("Education")
-                    st.write(results['Education'])
-                
-                if 'Experience' in results and results['Experience']:
-                    st.subheader("Experience")
-                    st.write(results['Experience'])
-                
-                if 'Match Percentage' in results:
-                    match_pct = results['Match Percentage']
-                    color = "green" if match_pct >= 80 else "orange" if match_pct >= 60 else "red"
-                    st.subheader(f"Match Score: :{color}[{match_pct}%]")
+            # Show profile summary
+            st.markdown("### Profile Summary")
+            st.info(results.get('Profile Summary', ''))
+            
+            # Display education and experience in two columns
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("### Education")
+                st.write(results.get('Education', ''))
+            with col2:
+                st.markdown("### Experience")
+                st.write(results.get('Experience', ''))
             
             # Display projects and achievements if available
             if results.get('Projects', []) or results.get('Achievements', []):
