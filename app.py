@@ -15,8 +15,11 @@ import re
 from collections import Counter  
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import RegexpTokenizer  
 from nltk.corpus import stopwords
+
+# Initialize tokenizer
+word_tokenizer = RegexpTokenizer(r'\w+')
 
 # Download required NLTK data
 @st.cache_resource
@@ -47,6 +50,10 @@ def download_nltk_data():
 if not download_nltk_data():
     st.error('Failed to download required NLTK data. Please try refreshing the page.')
     st.stop()
+
+def tokenize_text(text):
+    """Helper function to tokenize text consistently"""
+    return word_tokenizer.tokenize(text.lower())
 
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
@@ -135,13 +142,9 @@ def extract_skills_and_keywords(text):
                     )
     
     stop_words = set(stopwords.words('english'))
-    try:
-        words = word_tokenize(text)
-    except LookupError:
-        # Fallback to simple whitespace tokenization if NLTK tokenizer fails
-        words = text.split()
+    words = tokenize_text(text)
     
-    words = [word.lower() for word in words if word.isalnum() and word.lower() not in stop_words]
+    words = [word for word in words if word not in stop_words]
     
     bigrams = [words[i] + ' ' + words[i+1] for i in range(len(words)-1)]
     trigrams = [words[i] + ' ' + words[i+1] + ' ' + words[i+2] for i in range(len(words)-2)]
