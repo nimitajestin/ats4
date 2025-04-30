@@ -488,7 +488,7 @@ def display_enhanced_results(results):
                     st.write(", ".join(results['Matched Skills'][category][:8]))
                 if category in results.get('Skill Gaps', {}):
                     st.markdown(f"**Missing {category} Skills:**")
-                    st.write(", ".join(results['Skill Gaps'][category]))
+                    st.write(", ".join(results['Skill Gaps'][category][:5]))
 
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
@@ -566,11 +566,33 @@ def get_ats_feedback(resume_text, jd_text):
         else:
             results = ats_response
         
-        # Display match percentage with color coding
-        # Green: ≥80%, Orange: ≥60%, Red: <60%
-        match_pct = float(results.get('JD Match', '0%').strip('%'))
-        color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results.get('JD Match', 'N/A')}</h2>", unsafe_allow_html=True)
+        try:
+            # Display basic results with colored match percentage
+            match_pct = results.get('JD Match', '0%')
+            color = 'green' if float(match_pct.strip('%')) >= 70 else 'orange' if float(match_pct.strip('%')) >= 50 else 'red'
+            st.markdown(f"<h3 style='color: {color};'>Overall Match: {match_pct}</h3>", unsafe_allow_html=True)
+            
+            # Show key strengths and areas for improvement in columns
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Key Strengths**")
+                for strength in results.get('Key Strengths', [])[:3]:
+                    st.success(f" {strength}")
+            with col2:
+                st.markdown("**Areas for Improvement**")
+                for keyword in results.get('Missing Keywords', [])[:3]:
+                    st.error(f" {keyword}")
+            
+            # Show top 3 recommendations
+            if results.get('Recommendations'):
+                st.markdown("---")
+                st.markdown("**Recommendations**")
+                for rec in results['Recommendations'][:3]:
+                    st.info(f"• {rec}")
+                    
+        except Exception as e:
+            st.error(f"Error displaying results: {str(e)}")
+            return
         
         # Create three tabs for organized results display
         tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
