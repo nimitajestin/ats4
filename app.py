@@ -15,7 +15,7 @@ import re
 from collections import Counter  
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
-from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
 # Download required NLTK data
@@ -243,9 +243,9 @@ def extract_pdf_text(uploaded_file):
     return text
 def analyze_education(text):
     text_lower = text.lower()
-    
-    sentences = text_lower.split('.')
-    edu_sentences = [s.strip() for s in sentences if any(term in s for term in EDUCATION_TERMS)]
+    # Use simple string splitting instead of sent_tokenize
+    sentences = [s.strip() for s in text_lower.split('.') if s.strip()]
+    edu_sentences = [s for s in sentences if any(term in s for term in EDUCATION_TERMS)]
     
     is_cs = any(term in text_lower for term in ['computer science', 'cs', 'information technology', 'it', 'software engineering'])
     
@@ -264,7 +264,8 @@ def analyze_education(text):
 
 def analyze_experience(text):
     text_lower = text.lower()
-    sentences = [s.strip() for s in text_lower.split('.')]
+    # Use simple string splitting instead of sent_tokenize
+    sentences = [s.strip() for s in text_lower.split('.') if s.strip()]
 
     experiences = {
         'work': [],
