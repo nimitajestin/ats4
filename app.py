@@ -315,7 +315,8 @@ def generate_recommendations(resume_data, jd_data, matched_skills, skill_gaps):
     return recommendations[:5]  # Return top 5 most relevant recommendations
 
 def extract_resume_sections(text):
-    """Precisely extract resume sections with content validation"""
+    """Safely extract resume sections with comprehensive error handling"""
+    # Default empty sections
     sections = {
         'profile': '',
         'experience': '', 
@@ -324,37 +325,52 @@ def extract_resume_sections(text):
         'achievements': ''
     }
     
-    # Enhanced section patterns with content validation
-    section_patterns = {
-        'profile': (r'(summary|profile|about|objective)\b', r'(?s)(.*?)(?=\n\s*(experience|education|projects|achievements|skills|$))'),
-        'experience': (r'(experience|work history|employment)\b', r'(?s)(.*?)(?=\n\s*(education|projects|achievements|skills|$))'),
-        'education': (r'(education|academics|qualifications)\b', r'(?s)(.*?)(?=\n\s*(projects|achievements|skills|experience|$))'),
-        'projects': (r'(projects|key projects|notable projects)\b', r'(?s)(.*?)(?=\n\s*(achievements|skills|education|$))'),
-        'achievements': (r'(achievements|accomplishments|key achievements)\b', r'(?s)(.*?)(?=\n\s*(skills|education|projects|$))')
-    }
-    
-    current_section = None
-    lines = text.split('\n')
-    
-    for i, line in enumerate(lines):
-        line = line.strip()
-        if not line:
-            continue
+    try:
+        # Validate input
+        if not text or not isinstance(text, str):
+            return sections
             
-        # Check for section headers
-        for section, (header_pattern, _) in section_patterns.items():
-            if re.search(header_pattern, line, re.I):
-                current_section = section
-                break
+        # Normalize text
+        text = text.strip()
+        if not text:
+            return sections
+            
+        # Split into lines safely
+        lines = text.split('\n')
+        
+        # Section patterns (simplified for reliability)
+        patterns = {
+            'profile': r'(summary|profile|about|objective)',
+            'experience': r'(experience|work history|employment)',
+            'education': r'(education|academics|qualifications)',
+            'projects': r'(projects|key projects|notable projects)',
+            'achievements': r'(achievements|accomplishments|key achievements)'
+        }
+        
+        current_section = None
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
                 
-        # Add validated content to current section
-        if current_section:
-            _, content_pattern = section_patterns[current_section]
-            content_match = re.search(content_pattern, '\n'.join(lines[i:]), re.I)
-            if content_match:
-                sections[current_section] = content_match.group(1).strip()
-                break
+            # Check for new section
+            for section, pattern in patterns.items():
+                if re.search(pattern, line, re.IGNORECASE):
+                    current_section = section
+                    break
+                    
+            # Add content to current section
+            if current_section:
+                sections[current_section] += f"{line}\n"
                 
+        # Clean up sections
+        for section in sections:
+            sections[section] = sections[section].strip()
+            
+    except Exception as e:
+        st.warning(f"Section extraction warning: {str(e)}")
+        
     return sections
 
 @st.cache_data 
@@ -568,6 +584,21 @@ if st.button(" Evaluate"):
             # Skill Development Recommendations
             with st.expander("Skill Development", expanded=True):
                 if 'Skill Gaps' in results:
+                    for category in results['Skill Gaps']:
+                        if results['Skill Gaps'][category]:
+                            st.error(f"Develop {category} skills: {', '.join(results['Skill Gaps'][category][:3])}")
+                    
+                    st.info("💡 Learning resources:")
+                    st.markdown("""
+                    - [FreeCodeCamp](https://www.freecodecamp.org/)
+                    - [Coursera](https://www.coursera.org/)
+                    - [Udemy](https://www.udemy.com/)
+                    """)
+                else:
+                    st.success("✔ Your skills match well with the job requirements!")
+    # Show warning if inputs are missing
+    else:
+        st.warning("Please upload a resume and enter a job description.")
                     for category in results['Skill Gaps']:
                         if results['Skill Gaps'][category]:
                             st.error(f"Develop {category} skills: {', '.join(results['Skill Gaps'][category][:3])}")
