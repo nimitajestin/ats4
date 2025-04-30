@@ -1,10 +1,10 @@
 import streamlit as st
 import os                  
-import PyPDF2  # Make sure this is at the top with other imports
-import re
-import json
-from collections import Counter
-from sklearn.feature_extraction.text import TfidfVectorizer
+import PyPDF2 as pdf      
+import json               
+import re                 
+from collections import Counter  
+from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
 import nltk
 from nltk.corpus import stopwords
@@ -170,19 +170,56 @@ def calculate_match_percentage(resume_text, jd_text):
         print(f"Error in calculate_match_percentage: {str(e)}")
         return {'score': 0, 'category_scores': {}}
 
+def extract_resume_sections(text):
+    """Extract structured sections from resume text"""
+    sections = {
+        'profile': '',
+        'experience': '',
+        'education': '',
+        'projects': '',
+        'achievements': ''
+    }
+    
+    # Common section headers pattern
+    section_patterns = {
+        'profile': r'(summary|profile|about)\b',
+        'experience': r'(experience|work history|employment)\b',
+        'education': r'(education|academics|qualifications)\b',
+        'projects': r'(projects|key projects|notable projects)\b',
+        'achievements': r'(achievements|accomplishments|key achievements)\b'
+    }
+    
+    # Split text into lines and process
+    lines = text.split('\n')
+    current_section = None
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Check for section headers
+        for section, pattern in section_patterns.items():
+            if re.search(pattern, line, re.I):
+                current_section = section
+                break
+                
+        # Add content to current section
+        if current_section and not re.search('|'.join(section_patterns.values()), line, re.I):
+            sections[current_section] += line + '\n'
+    
+    return sections
+
 def extract_text_from_pdf(uploaded_file):
-    """Handle Streamlit UploadedFile objects"""
     text = ""
     try:
         reader = PyPDF2.PdfReader(uploaded_file)
         for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                page_text = re.sub(r'\s+', ' ', page_text)
-                text += page_text + '\n\n'
+            text += page.extract_text() + '\n'
+        return extract_resume_sections(text)
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-    return text.strip()
+        return None
 
 def preprocess_text(text):
     """Enhanced text preprocessing for better analysis"""
