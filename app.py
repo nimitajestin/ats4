@@ -87,45 +87,45 @@ EDUCATION_TERMS = [
 ]
 
 def extract_skills_and_keywords(text):
-    """Enhanced skill extraction with resume-specific analysis"""
+    """Optimized skill extraction with efficient context analysis"""
     text = text.lower()
     text = re.sub(r'\s+', ' ', text)
     
-    # Initialize categories with empty dicts
     categorized_skills = {category: {} for category in SKILL_CATEGORIES}
     
-    # First pass - identify mentioned technologies
-    for category, data in SKILL_CATEGORIES.items():
-        for skill in data['skills']:
-            if re.search(r'\b' + re.escape(skill) + r'\b', text):
-                # Find all occurrences with context
-                matches = list(re.finditer(r'\b' + re.escape(skill) + r'\b', text))
-                contexts = [text[max(0,m.start()-50):min(len(text),m.end()+50)] for m in matches]
-                
-                # Calculate proficiency score (0-1)
-                score = 0.5  # base
-                
-                # Boost score based on context indicators
-                for ctx in contexts:
-                    if any(w in ctx for w in ['expert', 'proficient', 'experienced']):
-                        score = max(score, 1.0)
-                    elif any(w in ctx for w in ['knowledge', 'familiar']):
-                        score = max(score, 0.7)
-                    elif any(w in ctx for w in ['project', 'built', 'developed']):
-                        score = max(score, 0.9)
-                
-                # Boost if mentioned multiple times
-                if len(matches) > 1:
-                    score = min(1.0, score + 0.1 * len(matches))
-                    
-                categorized_skills[category][skill] = score
+    # Single pass with optimized regex
+    skill_patterns = {
+        category: re.compile(r'\b(' + '|'.join(map(re.escape, data['skills'])) + r')\b')
+        for category, data in SKILL_CATEGORIES.items()
+    }
     
-    # Extract keywords
-    stop_words = STOP_WORDS
-    words = tokenize_text(text)
-    keywords = [word for word in words if word not in stop_words]
+    for category, pattern in skill_patterns.items():
+        for match in pattern.finditer(text):
+            skill = match.group()
+            context_start = max(0, match.start() - 50)
+            context_end = min(len(text), match.end() + 50)
+            context = text[context_start:context_end]
+            
+            # Efficient context scoring
+            score = 0.5  # base
+            if any(w in context for w in ['expert', 'proficient', 'experienced']):
+                score = 1.0
+            elif any(w in context for w in ['knowledge', 'familiar']):
+                score = 0.7
+            elif any(w in context for w in ['project', 'built', 'developed']):
+                score = 0.9
+            
+            # Track multiple mentions
+            if skill in categorized_skills[category]:
+                score = min(1.0, categorized_skills[category][skill] + 0.1)
+            
+            categorized_skills[category][skill] = score
     
-    return keywords, categorized_skills
+    # Efficient keyword extraction
+    words = [word for word in re.findall(r'\b\w+\b', text) 
+             if word not in STOP_WORDS and len(word) > 2]
+    
+    return words, categorized_skills
 
 def calculate_match_percentage(resume_text, jd_text):
     try:
