@@ -144,16 +144,16 @@ def calculate_match_percentage(resume_text, jd_text):
                 
             # Calculate match percentage for this category
             matched_score = sum(
-                min(jd_skills[skill], resume_skills[skill]) 
-                for skill in jd_skills if skill in resume_skills
+                min(jd_skills[skill], resume_skills.get(skill, 0)) 
+                for skill in jd_skills
             )
             
             total_score = sum(jd_skills.values())
             
             if total_score > 0:
                 match_percent = (matched_score / total_score) * 100
-                category_scores[category] = round(match_percent, 1)
-        
+                category_scores[category] = max(1, round(match_percent))  # Ensure at least 1% if any match
+            
         # Calculate overall score (weighted average)
         if not category_scores:
             return {'score': 0, 'category_scores': {}}
