@@ -15,105 +15,47 @@ import re
 from collections import Counter  
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
-from nltk.tokenize import word_tokenize, sent_tokenize  # For breaking text into words and sentences
-from nltk.corpus import stopwords                       # For removing common words (e.g., 'the', 'is', 'at')
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.corpus import stopwords
 
 # Download required NLTK data
+@st.cache_resource
 def download_nltk_data():
-    required_packages = [
-        'punkt',
-        'stopwords',
-        'averaged_perceptron_tagger',
-        'maxent_ne_chunker',
-        'words'
-    ]
-    
-    for package in required_packages:
+    try:
+        # First try to find punkt
         try:
-            if package == 'punkt':
-                nltk.data.find('tokenizers/punkt')
-            elif package == 'stopwords':
-                nltk.data.find('corpora/stopwords')
-            else:
-                nltk.data.find(package)
+            nltk.data.find('tokenizers/punkt')
         except LookupError:
-            with st.spinner(f'Downloading required NLTK data ({package})...'):
-                nltk.download(package, quiet=True)
+            with st.spinner('Downloading punkt tokenizer...'):
+                nltk.download('punkt', quiet=True)
+                # Verify download
+                nltk.data.find('tokenizers/punkt')
+        
+        # Then try to find stopwords
+        try:
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            with st.spinner('Downloading stopwords...'):
+                nltk.download('stopwords', quiet=True)
+        
+        # Download other required packages
+        other_packages = ['averaged_perceptron_tagger', 'maxent_ne_chunker', 'words']
+        for package in other_packages:
+            try:
+                nltk.data.find(package)
+            except LookupError:
+                with st.spinner(f'Downloading {package}...'):
+                    nltk.download(package, quiet=True)
+        
+        return True
+    except Exception as e:
+        st.error(f'Error downloading NLTK data: {str(e)}')
+        return False
 
 # Ensure NLTK data is downloaded before proceeding
-download_nltk_data()
-
-# Custom CSS with new color scheme
-st.markdown("""
-<style>
-    :root {
-        --primary-color: #4361ee;
-        --primary-light: rgba(67, 97, 238, 0.1);
-        --text-primary: #2c3e50;
-        --text-secondary: #7f8c8d;
-        --bg-primary: #ffffff;
-        --bg-secondary: #f5f5f5;
-        --border-color: rgba(0, 0, 0, 0.1);
-    }
-
-    /* Main app styling */
-    .stApp {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    /* Sidebar styling */
-    .css-1d391kg {
-        background-color: var(--bg-secondary);
-    }
-
-    /* Headers */
-    h1, h2, h3 {
-        color: var(--primary-color);
-    }
-
-    /* Buttons */
-    .stButton>button {
-        background-color: var(--primary-color);
-        color: white;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        border: none;
-        transition: all 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: var(--primary-light);
-        color: var(--primary-color);
-    }
-
-    /* Input fields */
-    .stTextInput>div>div>input {
-        border-radius: 8px;
-        border-color: var(--border-color);
-    }
-
-    /* File uploader */
-    .stFileUploader {
-        border-radius: 8px;
-        border-color: var(--border-color);
-        padding: var(--gap-md);
-    }
-
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --text-primary: #ecf0f1;
-            --text-secondary: #bdc3c7;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --primary-light: rgba(67, 97, 238, 0.2);
-        }
-    }
-</style>
-""", unsafe_allow_html=True)
+if not download_nltk_data():
+    st.error('Failed to download required NLTK data. Please try refreshing the page.')
+    st.stop()
 
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
@@ -143,22 +85,6 @@ EDUCATION_TERMS = [
     'gpa', 'cgpa', 'grade', 'honors', 'distinction'
 ]
 
-
-@st.cache_resource
-def download_nltk_data():
-    try:
-        nltk.data.find('punkt')
-    except LookupError:
-        with st.spinner('Downloading required language data (punkt)...'):
-            nltk.download('punkt')
-    
-    try:
-        nltk.data.find('stopwords')
-    except LookupError:
-        with st.spinner('Downloading required language data (stopwords)...'):
-            nltk.download('stopwords')
-
-download_nltk_data()
 
 @st.cache_data
 def extract_skills_and_keywords(text):
