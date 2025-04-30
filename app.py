@@ -1,14 +1,15 @@
+# Core imports at the very top
+import PyPDF2
 import streamlit as st
-import os                  
-import PyPDF2 as pdf      
-import json               
-import re                 
-from collections import Counter  
-from sklearn.feature_extraction.text import TfidfVectorizer  
-from sklearn.metrics.pairwise import cosine_similarity      
+import re
+import json
+from collections import Counter
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+import os
 
 # Text processing utilities
 def clean_text(text):
