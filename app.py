@@ -46,31 +46,18 @@ STOP_WORDS = {
     'under', 'again', 'further', 'then', 'once'
 }
 
-# Enhanced skill categories with weighted importance
 SKILL_CATEGORIES = {
-    'Technical': {
-        'weight': 1.5,
-        'subcategories': {
-            'Programming': ['python', 'java', 'javascript', 'c++', 'go', 'rust'],
-            'Frameworks': ['react', 'django', 'spring', 'node.js', 'flask'],
-            'Database': ['sql', 'mongodb', 'postgresql', 'redis'],
-            'DevOps': ['docker', 'kubernetes', 'aws', 'azure', 'ci/cd']
-        }
-    },
-    'Domain': {
-        'weight': 1.2,
-        'subcategories': {
-            'Industry': ['finance', 'healthcare', 'ecommerce', 'ai'],
-            'Methodologies': ['agile', 'scrum', 'kanban', 'devops']
-        }
-    },
-    'Soft': {
-        'weight': 0.8,
-        'subcategories': {
-            'Communication': ['presentation', 'writing', 'public speaking'],
-            'Leadership': ['mentoring', 'team lead', 'project management']
-        }
-    }
+    'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
+    
+    'Web Technologies': ['html', 'html5', 'css', 'css3', 'react', 'reactjs', 'angular', 'vue', 'nodejs', 'node.js', 'django', 'flask', 'express', 'jquery', 'bootstrap', 'sass', 'less', 'webpack', 'vite', 'nextjs', 'graphql', 'rest api', 'restful'],
+    
+    'Database': ['sql', 'mysql', 'postgresql', 'postgres', 'mongodb', 'mongo', 'oracle', 'redis', 'elasticsearch', 'dynamodb', 'firebase', 'cassandra', 'mariadb', 'sqlite', 'nosql'],
+    
+    'Cloud & DevOps': ['aws', 'amazon', 'azure', 'microsoft azure', 'gcp', 'google cloud', 'docker', 'kubernetes', 'k8s', 'jenkins', 'terraform', 'ci/cd', 'cicd', 'git', 'github', 'gitlab', 'bitbucket', 'linux', 'unix', 'bash', 'shell'],
+     
+    'Data Science': ['machine learning', 'ml', 'deep learning', 'dl', 'nlp', 'natural language processing', 'pandas', 'numpy', 'scipy', 'scikit-learn', 'sklearn', 'tensorflow', 'pytorch', 'keras', 'computer vision', 'cv', 'ai', 'artificial intelligence', 'data mining', 'statistics'],
+    
+    'Soft Skills': ['leadership', 'communication', 'teamwork', 'team player', 'problem solving', 'analytical', 'project management', 'agile', 'scrum', 'time management', 'collaboration', 'critical thinking', 'attention to detail', 'multitasking']
 }
 
 EDUCATION_TERMS = [
@@ -85,67 +72,61 @@ EDUCATION_TERMS = [
     'gpa', 'cgpa', 'grade', 'honors', 'distinction'
 ]
 
-def extract_skills_with_context(text):
-    """Enhanced skill extraction with context analysis"""
-    skills_found = {category: {} for category in SKILL_CATEGORIES}
-    
-    for category, data in SKILL_CATEGORIES.items():
-        for subcategory, skills in data['subcategories'].items():
-            for skill in skills:
-                # Find skill mentions with context
-                matches = re.finditer(r'\b' + re.escape(skill) + r'\b', text.lower())
-                for match in matches:
-                    context_start = max(0, match.start() - 30)
-                    context_end = min(len(text), match.end() + 30)
-                    context = text[context_start:context_end]
-                    
-                    # Score based on context
-                    score = 0.7  # base score
-                    if any(word in context for word in ['experience', 'proficient', 'expert']):
-                        score = 1.0
-                    elif any(word in context for word in ['knowledge', 'familiar']):
-                        score = 0.5
-                        
-                    skills_found[category][skill] = max(score, skills_found[category].get(skill, 0))
-    
-    return skills_found
-
-def calculate_skill_match(resume_skills, jd_skills):
-    """Calculate weighted match between resume and JD skills"""
-    match_results = {}
-    
-    for category in SKILL_CATEGORIES:
-        category_weight = SKILL_CATEGORIES[category]['weight']
-        category_match = 0
-        total_jd_skills = 0
-        
-        for subcategory in SKILL_CATEGORIES[category]['subcategories']:
-            resume_sub = resume_skills[category].get(subcategory, {})
-            jd_sub = jd_skills[category].get(subcategory, {})
-            
-            # Calculate match percentage
-            matched = set(resume_sub.keys()) & set(jd_sub.keys())
-            total = len(jd_sub)
-            
-            if total > 0:
-                sub_match = len(matched) / total
-                # Weight by skill importance (score from extraction)
-                weighted_match = sum(jd_sub[skill] for skill in matched) / sum(jd_sub.values())
-                category_match += (sub_match * 0.3 + weighted_match * 0.7) * category_weight
-                total_jd_skills += total
-        
-        if total_jd_skills > 0:
-            match_results[category] = min(100, round((category_match / total_jd_skills) * 100, 1))
-        else:
-            match_results[category] = 0
-    
-    return match_results
-
 def extract_skills_and_keywords(text):
     text = text.lower()
     text = re.sub(r'\s+', ' ', text)
     
-    categorized_skills = extract_skills_with_context(text)
+    categorized_skills = {category: {} for category in SKILL_CATEGORIES}
+    
+    def find_skill_variations(skill):
+        variations = [skill]
+        skill_variations = {
+            'js': 'javascript',
+            'ts': 'typescript',
+            'py': 'python',
+            'cpp': 'c++',
+            'react': 'reactjs',
+            'vue': 'vuejs',
+            'node': 'nodejs',
+            'aws': 'amazon web services',
+            'ml': 'machine learning',
+            'ai': 'artificial intelligence',
+            'dl': 'deep learning',
+            'nlp': 'natural language processing',
+            'db': 'database',
+            'ui': 'user interface',
+            'ux': 'user experience',
+            'api': 'application programming interface'
+        }
+        if skill in skill_variations:
+            variations.append(skill_variations[skill])
+        for abbr, full in skill_variations.items():
+            if skill == full:
+                variations.append(abbr)
+        return variations
+    
+    for category, skills in SKILL_CATEGORIES.items():
+        for skill in skills:
+            variations = find_skill_variations(skill)
+            for variation in variations:
+                pattern = r'\b' + re.escape(variation) + r'\b'
+                matches = re.finditer(pattern, text)
+                for match in matches:
+                    context_start = max(0, match.start() - 50)
+                    context_end = min(len(text), match.end() + 50)
+                    context = text[context_start:context_end]
+                    
+                    confidence = 0.8  # Base confidence
+                    tech_indicators = ['developed', 'implemented', 'built', 'created', 'designed', 'managed', 'led']
+                    if any(indicator in context for indicator in tech_indicators):
+                        confidence = 0.9
+                    if any(tech in context for tech in ['project', 'application', 'system', 'software']):
+                        confidence = 1.0
+                    
+                    categorized_skills[category][skill] = max(
+                        confidence,
+                        categorized_skills[category].get(skill, 0)
+                    )
     
     stop_words = STOP_WORDS
     words = tokenize_text(text)
@@ -169,59 +150,76 @@ def extract_skills_and_keywords(text):
 
 def calculate_match_percentage(resume_text, jd_text):
     try:
-        # Initialize all variables with defaults
-        profile_summary = ""
-        matched_keywords = []
-        missing_keywords = []
-        category_scores = {}
-        skill_gaps = {}
-        matched_skills = {}
-        recommendations = []
+        resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
+        jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
         
-        # Perform analysis only if inputs exist
-        if resume_text and jd_text:
-            resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
-            jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
-            
-            # Calculate keyword matches
-            matched_keywords = [(kw, jd_keywords.count(kw)) 
-                              for kw in set(jd_keywords) if kw in resume_keywords]
-            missing_keywords = [(kw, jd_keywords.count(kw)) 
-                              for kw in set(jd_keywords) if kw not in resume_keywords]
-            
-            # Sort by frequency in JD (importance)
-            matched_keywords.sort(key=lambda x: x[1], reverse=True)
-            missing_keywords.sort(key=lambda x: x[1], reverse=True)
-            
-            # Rest of your analysis code...
-            match_percentage = calculate_skill_match(resume_categories, jd_categories)
-            
-            education = analyze_education(resume_text)
-            experience = analyze_experience(resume_text)
-            
-            if education:
-                profile_summary = education.strip().capitalize()
-            if experience:
-                if profile_summary:
-                    profile_summary += " | "
-                profile_summary += experience
-            
-            # Skill category analysis...
-            
-        return {
-            "JD Match": match_percentage['Technical'] if 'match_percentage' in locals() else 0,
-            "Profile Summary": profile_summary,
-            "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
-            "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
-            "Education": analyze_education(resume_text) if 'resume_text' in locals() else "No education details found",
-            "Experience": analyze_experience(resume_text) if 'resume_text' in locals() else "No experience details found",
-            "Projects": analyze_projects(resume_text)[:3] if 'resume_text' in locals() and analyze_projects(resume_text) else [],
-            "Achievements": analyze_achievements(resume_text)[:3] if 'resume_text' in locals() and analyze_achievements(resume_text) else [],
-            "Category Matches": match_percentage,
-            "Skill Gaps": skill_gaps,
-            "Matched Skills": matched_skills,
-            "Recommendations": recommendations
-        }
+        tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'Cloud & DevOps', 'Data Science']
+        tech_scores = []
+        
+        for category in tech_categories:
+            if category in jd_categories and jd_categories[category]:
+                jd_skills = set(jd_categories[category])
+                resume_skills = set(resume_categories.get(category, []))
+                
+                exact_matches = len(jd_skills & resume_skills)
+                partial_matches = sum(1 for js in jd_skills for rs in resume_skills 
+                                    if js in rs or rs in js)
+                
+                match_score = (exact_matches + 0.5 * partial_matches) / len(jd_skills)
+                tech_scores.append(match_score)
+        
+        tech_similarity = sum(tech_scores) / len(tech_scores) if tech_scores else 0.5
+        
+        soft_skills_score = 0.0
+        if 'Soft Skills' in jd_categories and jd_categories['Soft Skills']:
+            jd_soft_skills = set(jd_categories['Soft Skills'])
+            resume_soft_skills = set(resume_categories.get('Soft Skills', []))
+            soft_skills_score = len(jd_soft_skills & resume_soft_skills) / len(jd_soft_skills)
+        
+        def preprocess_text(text):
+            text = text.lower()
+            text = re.sub(r'[^a-z0-9\s]', ' ', text)
+            stop_words = STOP_WORDS
+            words = [w for w in text.split() if w not in stop_words]
+            return ' '.join(words)
+        
+        processed_resume = preprocess_text(resume_text)
+        processed_jd = preprocess_text(jd_text)
+        
+        vectorizer = TfidfVectorizer(ngram_range=(1, 2))
+        tfidf_matrix = vectorizer.fit_transform([processed_resume, processed_jd])
+        keyword_similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        
+        exp_edu_score = 0.0
+        education = analyze_education(resume_text)
+        experience = analyze_experience(resume_text)
+        
+        if education and any(term in education.lower() for term in ['computer science', 'it', 'software', 'engineering']):
+            exp_edu_score += 0.5
+     
+        if experience:
+            exp_words = experience.lower()
+ 
+            years_pattern = r'\b\d+\s*(?:\+\s*)?years?\b'
+            if re.search(years_pattern, exp_words):
+                exp_edu_score += 0.5
+   
+        final_score = (
+            0.45 * tech_similarity +
+            0.15 * soft_skills_score +
+            0.25 * keyword_similarity +
+            0.15 * exp_edu_score
+        )
+        
+        if final_score > 0.6:
+            final_score = 0.6 + (final_score - 0.6) * 1.5
+        elif final_score < 0.4:
+            final_score = 0.4 * (final_score / 0.4)
+
+        final_score = max(0, min(1, final_score))
+        
+        return round(final_score * 100, 1)
+        
     except Exception as e:
         print(f"Error in calculate_match_percentage: {str(e)}")
         return 50
@@ -344,7 +342,7 @@ def get_ats_feedback(resume_text, jd_text):
             missing_keywords.sort(key=lambda x: x[1], reverse=True)
             
             # Rest of your analysis code...
-            match_percentage = calculate_skill_match(resume_categories, jd_categories)
+            match_percentage = calculate_match_percentage(resume_text, jd_text)
             
             education = analyze_education(resume_text)
             experience = analyze_experience(resume_text)
@@ -359,7 +357,7 @@ def get_ats_feedback(resume_text, jd_text):
             # Skill category analysis...
             
         return {
-            "JD Match": match_percentage['Technical'] if 'match_percentage' in locals() else 0,
+            "JD Match": f"{match_percentage}%" if 'match_percentage' in locals() else "0%",
             "Profile Summary": profile_summary,
             "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
             "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
@@ -367,7 +365,7 @@ def get_ats_feedback(resume_text, jd_text):
             "Experience": analyze_experience(resume_text) if 'resume_text' in locals() else "No experience details found",
             "Projects": analyze_projects(resume_text)[:3] if 'resume_text' in locals() and analyze_projects(resume_text) else [],
             "Achievements": analyze_achievements(resume_text)[:3] if 'resume_text' in locals() and analyze_achievements(resume_text) else [],
-            "Category Matches": match_percentage,
+            "Category Matches": category_scores,
             "Skill Gaps": skill_gaps,
             "Matched Skills": matched_skills,
             "Recommendations": recommendations
@@ -423,9 +421,9 @@ if st.button(" Evaluate"):
         
         # Display match percentage with color coding
         # Green: ≥80%, Orange: ≥60%, Red: <60%
-        match_pct = float(results.get('JD Match', '0'))
+        match_pct = float(results.get('JD Match', '0%').strip('%'))
         color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results.get('JD Match', 'N/A')}%</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results.get('JD Match', 'N/A')}</h2>", unsafe_allow_html=True)
         
         # Create three tabs for organized results display
         tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
@@ -467,7 +465,7 @@ if st.button(" Evaluate"):
             
             # Enhanced skill categories display
             if 'Category Matches' in results:
-                for category in ['Technical', 'Domain', 'Soft']:
+                for category in ['Technical', 'Soft', 'Domain']:
                     match_pct = results['Category Matches'].get(category, 0)
                     progress_color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
                     
@@ -517,7 +515,7 @@ if st.button(" Evaluate"):
             with st.expander("Skill Development Plan", expanded=True):
                 if 'Skill Gaps' in results:
                     st.markdown("**Focus on developing these skills:**")
-                    for category in ['Technical', 'Domain', 'Soft']:
+                    for category in ['Technical', 'Soft', 'Domain']:
                         if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
                             st.markdown(f"**{category}:** {', '.join(results['Skill Gaps'][category][:3])}")
                 else:
@@ -537,21 +535,3 @@ if st.button(" Evaluate"):
     # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
-
-    # Display basic results
-    st.markdown(f"#### Overall Match: {results.get('JD Match', '0%')}")
-    
-    # Show key strengths and missing keywords
-    st.markdown("##### Key Strengths")
-    for strength in results.get('Key Strengths', [])[:5]:
-        st.markdown(f"- {strength}")
-        
-    st.markdown("##### Areas for Improvement")
-    for keyword in results.get('Missing Keywords', [])[:5]:
-        st.markdown(f"- {keyword}")
-        
-    # Show basic recommendations
-    if results.get('Recommendations'):
-        st.markdown("##### Recommendations")
-        for rec in results['Recommendations'][:3]:
-            st.markdown(f"- {rec}")
