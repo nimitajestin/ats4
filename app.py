@@ -298,107 +298,109 @@ def get_key_strengths(resume_keywords, jd_keywords):
     return sorted(strengths, key=lambda x: len(x), reverse=True)[:5]
 
 def analyze_projects(text):
-    text_lower = text.lower()
-    sentences = [s.strip() for s in text_lower.split('.')]
-    
-    projects = [s for s in sentences if any(word in s for word in ['project', 'developed', 'built', 'created', 'implemented'])]
+    """Analyze project information from text"""
+    sentences = split_into_sentences(text)
+    project_words = ['project', 'developed', 'built', 'created', 'implemented']
+    projects = [s for s in sentences if any(word in s.lower() for word in project_words)]
     return projects
 
 def analyze_achievements(text):
-    text_lower = text.lower()
-    sentences = [s.strip() for s in text_lower.split('.')]
-    
-    achievements = [s for s in sentences if any(word in s for word in 
-        ['achieved', 'awarded', 'won', 'recognized', 'selected', 'ranked', 'improved', 
-         'increased', 'decreased', 'reduced', 'saved', 'delivered', 'led', 'managed'])]
+    """Analyze achievement information from text"""
+    sentences = split_into_sentences(text)
+    achievement_words = [
+        'achieved', 'awarded', 'won', 'recognized', 'selected', 'ranked', 'improved',
+        'increased', 'decreased', 'reduced', 'saved', 'delivered', 'led', 'managed'
+    ]
+    achievements = [s for s in sentences if any(word in s.lower() for word in achievement_words)]
     return achievements
 
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
-    resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
-    jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
-    
-    missing_keywords = list(set(jd_keywords) - set(resume_keywords))
-    key_strengths = get_key_strengths(resume_keywords, jd_keywords)
-    
-    match_percentage = calculate_match_percentage(resume_text, jd_text)
-    
-    education = analyze_education(resume_text)
-    experience = analyze_experience(resume_text)
-    projects = analyze_projects(resume_text)
-    achievements = analyze_achievements(resume_text)
+    try:
+        resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
+        jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
+        
+        missing_keywords = list(set(jd_keywords) - set(resume_keywords))
+        key_strengths = get_key_strengths(resume_keywords, jd_keywords)
+        
+        match_percentage = calculate_match_percentage(resume_text, jd_text)
+        
+        education = analyze_education(resume_text)
+        experience = analyze_experience(resume_text)
+        projects = analyze_projects(resume_text)
+        achievements = analyze_achievements(resume_text)
 
-    profile_parts = []
-    if education:
-        profile_parts.append(education.strip().capitalize())
-    if experience:
-        profile_parts.append(experience)
-    profile_summary = ' | '.join(profile_parts)
-    
-    skill_gaps = {}
-    for category in SKILL_CATEGORIES:
-        jd_skills = set(jd_categories.get(category, []))
-        resume_skills = set(resume_categories.get(category, []))
-        if jd_skills:
-            skill_gaps[category] = list(jd_skills - resume_skills)
-    
-    category_matches = {}
-    for category in SKILL_CATEGORIES:
-        jd_skills = set(jd_categories.get(category, []))
-        resume_skills = set(resume_categories.get(category, []))
-        if jd_skills:
-            match = len(jd_skills & resume_skills) / len(jd_skills) * 100
-            category_matches[category] = round(match, 1)
-    
-    recommendations = []
-    
-    if not education:
-        recommendations.append("Add your educational background prominently")
-    elif 'computer science' in education.lower() or 'cs' in education.lower():
-        recommendations.append("Your CS background is relevant - highlight any specialized coursework or projects")
-    
-    if not experience:
-        recommendations.append("Add any internships, projects, or relevant work experience")
-    elif 'internship' in experience.lower():
-        recommendations.append("Quantify your internship achievements with specific metrics")
-    elif any(str(i) in experience.lower() for i in range(1, 6)):
-        recommendations.append("Highlight leadership roles and team contributions in your experience")
-    
-    if not projects:
-        recommendations.append("Add relevant projects showcasing your technical skills")
-    elif len(projects) < 3:
-        recommendations.append("Consider adding more projects demonstrating your expertise")
-    
-    if not achievements:
-        recommendations.append("Add quantifiable achievements and metrics to strengthen your impact")
-    
-    tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'Cloud & DevOps']
-    missing_tech = [cat for cat in tech_categories if cat in skill_gaps and skill_gaps[cat]]
-    
-    if missing_tech:
-        for category in missing_tech[:2]:  # Suggest skills from top 2 categories
-            gaps = skill_gaps[category][:3]  # Suggest top 3 missing skills
-            if gaps:
-                recommendations.append(f"Add {category} skills: {', '.join(gaps)}")
-   
-    if len(resume_text.split()) < 200:
-        recommendations.append("Your resume seems concise - consider adding more detail to your experiences")
-    
-    response = {
-        "JD Match": f"{match_percentage}%",
-        "Profile Summary": profile_summary,
-        "Key Strengths": key_strengths,
-        "Missing Keywords": missing_keywords[:5],
-        "Education": education.strip().capitalize() if education else "No education details found",
-        "Experience": experience.strip().capitalize() if experience else "No experience details found",
-        "Projects": projects[:3] if projects else [], 
-        "Achievements": achievements[:3] if achievements else [], 
-        "Category Matches": category_matches,
-        "Skill Gaps": skill_gaps,
-        "Recommendations": recommendations
-    }
-    
-    return json.dumps(response, indent=2)
+        profile_parts = []
+        if education:
+            profile_parts.append(education.strip().capitalize())
+        if experience:
+            profile_parts.append(experience)
+        profile_summary = ' | '.join(profile_parts)
+        
+        skill_gaps = {}
+        for category in SKILL_CATEGORIES:
+            jd_skills = set(jd_categories.get(category, []))
+            resume_skills = set(resume_categories.get(category, []))
+            if jd_skills:
+                skill_gaps[category] = list(jd_skills - resume_skills)
+        
+        category_matches = {}
+        for category in SKILL_CATEGORIES:
+            jd_skills = set(jd_categories.get(category, []))
+            resume_skills = set(resume_categories.get(category, []))
+            if jd_skills:
+                match = len(jd_skills & resume_skills) / len(jd_skills) * 100
+                category_matches[category] = round(match, 1)
+        
+        recommendations = []
+        
+        # Generate recommendations based on analysis
+        if match_percentage < 60:
+            recommendations.append("Your resume needs significant improvement to match the job requirements")
+        elif match_percentage < 80:
+            recommendations.append("Your resume could use some enhancements to better match the job requirements")
+        
+        if not education:
+            recommendations.append("Add your educational background and qualifications")
+        
+        if not experience:
+            recommendations.append("Add your work experience with specific roles and responsibilities")
+        
+        if not projects:
+            recommendations.append("Add relevant projects showcasing your technical skills")
+        elif len(projects) < 3:
+            recommendations.append("Consider adding more projects demonstrating your expertise")
+        
+        if not achievements:
+            recommendations.append("Add quantifiable achievements and metrics to strengthen your impact")
+        
+        tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'Cloud & DevOps']
+        missing_tech = [cat for cat in tech_categories if cat in skill_gaps and skill_gaps[cat]]
+        
+        if missing_tech:
+            for category in missing_tech[:2]:  # Suggest skills from top 2 categories
+                gaps = skill_gaps[category][:3]  # Suggest top 3 missing skills
+                if gaps:
+                    recommendations.append(f"Add {category} skills: {', '.join(gaps)}")
+        
+        if len(tokenize_text(resume_text)) < 200:
+            recommendations.append("Your resume seems concise - consider adding more detail to your experiences")
+        
+        return {
+            "JD Match": f"{match_percentage}%",
+            "Profile Summary": profile_summary,
+            "Key Strengths": key_strengths,
+            "Missing Keywords": missing_keywords[:5],
+            "Education": education.strip().capitalize() if education else "No education details found",
+            "Experience": experience.strip().capitalize() if experience else "No experience details found",
+            "Projects": projects[:3] if projects else [],
+            "Achievements": achievements[:3] if achievements else [],
+            "Category Matches": category_matches,
+            "Recommendations": recommendations
+        }
+    except Exception as e:
+        st.error(f"Error in text processing: {str(e)}")
+        return None
 
 # Streamlit App Interface
 
