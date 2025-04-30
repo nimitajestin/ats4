@@ -449,9 +449,9 @@ if st.button(" Evaluate"):
         
         # Display match percentage with color coding
         # Green: ≥80%, Orange: ≥60%, Red: <60%
-        match_pct = float(results['JD Match'].strip('%'))
+        match_pct = float(results.get('JD Match', '0%').strip('%'))
         color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results['JD Match']}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results.get('JD Match', 'N/A')}</h2>", unsafe_allow_html=True)
         
         # Create three tabs for organized results display
         tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
@@ -460,69 +460,71 @@ if st.button(" Evaluate"):
         with tab1:
             # Show profile summary
             st.markdown("### Profile Summary")
-            st.info(results['Profile Summary'])
+            st.info(results.get('Profile Summary', ''))
             
             # Display education and experience in two columns
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### Education")
-                st.write(results['Education'])
+                st.write(results.get('Education', ''))
             with col2:
                 st.markdown("### Experience")
-                st.write(results['Experience'])
+                st.write(results.get('Experience', ''))
             
             # Display projects and achievements if available
-            if results['Projects'] or results['Achievements']:
+            if results.get('Projects', []) or results.get('Achievements', []):
                 st.markdown("### Key Highlights")
                 
                 # Show top 3 projects
-                if results['Projects']:
+                if results.get('Projects', []):
                     st.markdown("#### Notable Projects")
-                    for project in results['Projects']:
+                    for project in results['Projects'][:3]:
                         st.markdown(f"* {project.capitalize()}")
                 
                 # Show top 3 achievements
-                if results['Achievements']:
+                if results.get('Achievements', []):
                     st.markdown("#### Key Achievements")
-                    for achievement in results['Achievements']:
+                    for achievement in results['Achievements'][:3]:
                         st.markdown(f"* {achievement.capitalize()}")
         
         # Tab 2: Skills Analysis - Show detailed skill matching and gaps
         with tab2:
             # Display skill categories with match percentages
-            st.markdown("### Skills by Category")
-            for category, match in results['Category Matches'].items():
-                # Create a progress bar layout with 75-25 split
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    # Color code the progress bars based on match percentage
-                    progress_color = 'green' if match >= 80 else 'orange' if match >= 60 else 'red'
-                    st.markdown(f"**{category}**")
-                    st.progress(match/100)  # Show progress bar
-                with col2:
-                    # Display match percentage with color coding
-                    st.markdown(f"<h4 style='color: {progress_color}'>{match}%</h4>", unsafe_allow_html=True)
-                
-                # Show missing skills in each category
-                if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                    st.caption(f"Missing: {', '.join(results['Skill Gaps'][category])}")
+            st.markdown("### Skills Analysis")
+            if 'Skill Gaps' in results and results['Skill Gaps']:
+                for category in ['Technical', 'Soft', 'Domain']:
+                    if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
+                        # Create a progress bar layout with 75-25 split
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            # Color code the progress bars based on match percentage
+                            progress_color = 'green' if results['Category Matches'].get(category, 0) >= 80 else 'orange' if results['Category Matches'].get(category, 0) >= 60 else 'red'
+                            st.markdown(f"**{category}**")
+                            st.progress(results['Category Matches'].get(category, 0)/100)  # Show progress bar
+                        with col2:
+                            # Display match percentage with color coding
+                            st.markdown(f"<h4 style='color: {progress_color}'>{results['Category Matches'].get(category, 0)}%</h4>", unsafe_allow_html=True)
+                        
+                        # Show missing skills in each category
+                        if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
+                            st.caption(f"Missing: {', '.join(results['Skill Gaps'][category])}")
             
             # Display strengths and areas for improvement side by side
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### Key Strengths")
-                for strength in results['Key Strengths']:
+                for strength in results.get('Key Strengths', []):
                     st.markdown(f"+ {strength}")  # Use bullet points for strengths
             with col2:
                 st.markdown("### Areas to Add")
-                for keyword in results['Missing Keywords']:
+                for keyword in results.get('Missing Keywords', []):
                     st.markdown(f"- {keyword}")  # Use minus for missing skills
         
         # Tab 3: Recommendations - Provide actionable feedback
         with tab3:
             # Show personalized recommendations
             st.markdown("### Detailed Recommendations")
-            for i, rec in enumerate(results['Recommendations'], 1):
+            for i, rec in enumerate(results.get('Recommendations', []), 1):
                 st.markdown(f"{i}. {rec}")  # Numbered list of recommendations
             
             # Display general resume improvement tips
