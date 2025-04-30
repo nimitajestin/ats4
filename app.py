@@ -516,12 +516,18 @@ if st.button(" Evaluate"):
         # Combine with extracted sections
         results.update(resume_sections)
         
-        # Safely handle match percentage
-        match_str = results.get('JD Match', '0%')
-        match_pct = float(match_str.strip('%')) if '%' in match_str else float(match_str)
+        match_percentage = results.get('Match Percentage', 0)
+        if 'JD Match' in results:
+            match_str = results['JD Match'].replace('%', '')
+            try:
+                match_percentage = float(match_str)
+            except ValueError:
+                match_percentage = 0
         
-        color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_str}</h2>", 
+        results['Match Percentage'] = match_percentage
+        
+        color = 'green' if match_percentage >= 80 else 'orange' if match_percentage >= 60 else 'red'
+        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_percentage}%</h2>", 
                    unsafe_allow_html=True)
         
         # Create three tabs for organized results display
