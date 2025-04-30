@@ -47,17 +47,18 @@ STOP_WORDS = {
 }
 
 SKILL_CATEGORIES = {
-    'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
-    
-    'Web Technologies': ['html', 'html5', 'css', 'css3', 'react', 'reactjs', 'angular', 'vue', 'nodejs', 'node.js', 'django', 'flask', 'express', 'jquery', 'bootstrap', 'sass', 'less', 'webpack', 'vite', 'nextjs', 'graphql', 'rest api', 'restful'],
-    
-    'Database': ['sql', 'mysql', 'postgresql', 'postgres', 'mongodb', 'mongo', 'oracle', 'redis', 'elasticsearch', 'dynamodb', 'firebase', 'cassandra', 'mariadb', 'sqlite', 'nosql'],
-    
-    'Cloud & DevOps': ['aws', 'amazon', 'azure', 'microsoft azure', 'gcp', 'google cloud', 'docker', 'kubernetes', 'k8s', 'jenkins', 'terraform', 'ci/cd', 'cicd', 'git', 'github', 'gitlab', 'bitbucket', 'linux', 'unix', 'bash', 'shell'],
-     
-    'Data Science': ['machine learning', 'ml', 'deep learning', 'dl', 'nlp', 'natural language processing', 'pandas', 'numpy', 'scipy', 'scikit-learn', 'sklearn', 'tensorflow', 'pytorch', 'keras', 'computer vision', 'cv', 'ai', 'artificial intelligence', 'data mining', 'statistics'],
-    
-    'Soft Skills': ['leadership', 'communication', 'teamwork', 'team player', 'problem solving', 'analytical', 'project management', 'agile', 'scrum', 'time management', 'collaboration', 'critical thinking', 'attention to detail', 'multitasking']
+    'Technical': {
+        'weight': 1.5,
+        'subcategories': ['Programming', 'Frameworks', 'Databases', 'DevOps', 'Tools']
+    },
+    'Domain': {
+        'weight': 1.2,
+        'subcategories': ['Industry', 'Regulatory', 'Methodologies', 'Standards']
+    },
+    'Soft': {
+        'weight': 0.8,
+        'subcategories': ['Communication', 'Leadership', 'Teamwork', 'Problem Solving']
+    }
 }
 
 EDUCATION_TERMS = [
@@ -105,28 +106,29 @@ def extract_skills_and_keywords(text):
                 variations.append(abbr)
         return variations
     
-    for category, skills in SKILL_CATEGORIES.items():
-        for skill in skills:
-            variations = find_skill_variations(skill)
-            for variation in variations:
-                pattern = r'\b' + re.escape(variation) + r'\b'
-                matches = re.finditer(pattern, text)
-                for match in matches:
-                    context_start = max(0, match.start() - 50)
-                    context_end = min(len(text), match.end() + 50)
-                    context = text[context_start:context_end]
-                    
-                    confidence = 0.8  # Base confidence
-                    tech_indicators = ['developed', 'implemented', 'built', 'created', 'designed', 'managed', 'led']
-                    if any(indicator in context for indicator in tech_indicators):
-                        confidence = 0.9
-                    if any(tech in context for tech in ['project', 'application', 'system', 'software']):
-                        confidence = 1.0
-                    
-                    categorized_skills[category][skill] = max(
-                        confidence,
-                        categorized_skills[category].get(skill, 0)
-                    )
+    for category, config in SKILL_CATEGORIES.items():
+        for subcat in config['subcategories']:
+            for skill in ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp']:
+                variations = find_skill_variations(skill)
+                for variation in variations:
+                    pattern = r'\b' + re.escape(variation) + r'\b'
+                    matches = re.finditer(pattern, text)
+                    for match in matches:
+                        context_start = max(0, match.start() - 50)
+                        context_end = min(len(text), match.end() + 50)
+                        context = text[context_start:context_end]
+                        
+                        confidence = 0.8  # Base confidence
+                        tech_indicators = ['developed', 'implemented', 'built', 'created', 'designed', 'managed', 'led']
+                        if any(indicator in context for indicator in tech_indicators):
+                            confidence = 0.9
+                        if any(tech in context for tech in ['project', 'application', 'system', 'software']):
+                            confidence = 1.0
+                        
+                        categorized_skills[category][skill] = max(
+                            confidence,
+                            categorized_skills[category].get(skill, 0)
+                        )
     
     stop_words = STOP_WORDS
     words = tokenize_text(text)
@@ -153,22 +155,80 @@ def calculate_match_percentage(resume_text, jd_text):
         resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
         jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
         
-        tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'Cloud & DevOps', 'Data Science']
-        tech_scores = []
-        
-        for category in tech_categories:
-            if category in jd_categories and jd_categories[category]:
-                jd_skills = set(jd_categories[category])
-                resume_skills = set(resume_categories.get(category, []))
+        # Calculate weighted scores with better matching
+        for category, config in SKILL_CATEGORIES.items():
+            jd_skills = set()
+            resume_skills = set()
+            
+            # Aggregate skills with context awareness
+            for subcat in config['subcategories']:
+                jd_skills.update(skill for skill in jd_categories.get(subcat, []) 
+                               if skill.lower() not in STOP_WORDS)
+                resume_skills.update(skill for skill in resume_categories.get(subcat, []) 
+                                   if skill.lower() not in STOP_WORDS)
+            
+            # Calculate matches with partial matching (e.g., 'Python' matches 'Python 3')
+            matched = []
+            for jd_skill in jd_skills:
+                for resume_skill in resume_skills:
+                    if jd_skill.lower() in resume_skill.lower() or \
+                       resume_skill.lower() in jd_skill.lower():
+                        matched.append(jd_skill)
+                        break
+            
+            gaps = list(jd_skills - set(matched))
+            
+            # Store matches and gaps with context
+            matched_skills[category] = sorted(matched, 
+                key=lambda x: (jd_keywords.count(x), len(x)), reverse=True)[:10]
+            skill_gaps[category] = sorted(gaps, 
+                key=lambda x: (jd_keywords.count(x), len(x)), reverse=True)[:5]
+            
+            # Enhanced scoring with partial credit for similar skills
+            if jd_skills:
+                base_score = len(matched) / len(jd_skills) * 100
+                # Bonus for having extra relevant skills
+                extra_skills = len(resume_skills - jd_skills)
+                base_score = min(base_score + (extra_skills * 2), 100)
+            else:
+                base_score = min(len(resume_skills) * 5, 30)
                 
-                exact_matches = len(jd_skills & resume_skills)
-                partial_matches = sum(1 for js in jd_skills for rs in resume_skills 
-                                    if js in rs or rs in js)
-                
-                match_score = (exact_matches + 0.5 * partial_matches) / len(jd_skills)
-                tech_scores.append(match_score)
+            category_scores[category] = min(round(base_score * config['weight'], 1), 100)
         
-        tech_similarity = sum(tech_scores) / len(tech_scores) if tech_scores else 0.5
+        # Generate more actionable recommendations
+        recommendations = []
+        
+        # 1. Priority recommendations for critical gaps
+        critical_gaps = [
+            (cat, gap) 
+            for cat in SKILL_CATEGORIES 
+            for gap in skill_gaps.get(cat, [])[:3] 
+            if category_scores[cat] < 50
+        ]
+        if critical_gaps:
+            rec = "Priority Skills to Add: " + ", ".join(
+                f"{gap} ({cat})" for cat, gap in critical_gaps[:3])
+            recommendations.append(rec)
+        
+        # 2. Achievement-based recommendations
+        achievements = analyze_achievements(resume_text)
+        if not achievements:
+            recommendations.append("Add 2-3 quantified achievements (e.g., 'Optimized system performance by 40%')")
+        elif len(achievements) < 3:
+            recommendations.append(f"Expand your achievements section (currently {len(achievements)})")
+        
+        # 3. Skills highlighting recommendations
+        for category in SKILL_CATEGORIES:
+            if category_scores[category] > 70 and len(matched_skills[category]) > 5:
+                recommendations.append(
+                    f"Highlight your strong {category} skills earlier in your resume: " + 
+                    ", ".join(matched_skills[category][:3]))
+        
+        # 4. Formatting suggestions
+        if len(resume_text.split()) > 800:
+            recommendations.append("Consider making your resume more concise (currently ~{len(resume_text.split())} words)")
+        
+        tech_similarity = sum(category_scores.values()) / len(category_scores) if category_scores else 0.5
         
         soft_skills_score = 0.0
         if 'Soft Skills' in jd_categories and jd_categories['Soft Skills']:
@@ -465,7 +525,7 @@ if st.button(" Evaluate"):
             
             # Enhanced skill categories display
             if 'Category Matches' in results:
-                for category in ['Technical', 'Soft', 'Domain']:
+                for category in ['Technical', 'Domain', 'Soft']:
                     match_pct = results['Category Matches'].get(category, 0)
                     progress_color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
                     
@@ -515,7 +575,7 @@ if st.button(" Evaluate"):
             with st.expander("Skill Development Plan", expanded=True):
                 if 'Skill Gaps' in results:
                     st.markdown("**Focus on developing these skills:**")
-                    for category in ['Technical', 'Soft', 'Domain']:
+                    for category in ['Technical', 'Domain', 'Soft']:
                         if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
                             st.markdown(f"**{category}:** {', '.join(results['Skill Gaps'][category][:3])}")
                 else:
