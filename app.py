@@ -87,28 +87,42 @@ EDUCATION_TERMS = [
 ]
 
 def extract_skills_and_keywords(text):
+    """Enhanced skill extraction with resume-specific analysis"""
     text = text.lower()
     text = re.sub(r'\s+', ' ', text)
     
-    categorized_skills = {category: {} for category in SKILL_CATEGORIES}
-    
+    # First pass - identify mentioned technologies
+    mentioned_tech = {}
     for category, data in SKILL_CATEGORIES.items():
         for skill in data['skills']:
-            # Find skill mentions with context
-            matches = re.finditer(r'\b' + re.escape(skill) + r'\b', text)
-            for match in matches:
-                context_start = max(0, match.start() - 30)
-                context_end = min(len(text), match.end() + 30)
-                context = text[context_start:context_end]
-                
-                # Score based on context
-                score = 0.7  # base score
-                if any(word in context for word in ['experience', 'proficient', 'expert']):
-                    score = 1.0
-                elif any(word in context for word in ['knowledge', 'familiar']):
-                    score = 0.5
-                    
-                categorized_skills[category][skill] = max(score, categorized_skills[category].get(skill, 0))
+            if re.search(r'\b' + re.escape(skill) + r'\b', text):
+                mentioned_tech[skill] = category
+    
+    # Second pass - analyze context and proficiency
+    categorized_skills = {category: {} for category in SKILL_CATEGORIES}
+    
+    for skill, category in mentioned_tech.items():
+        # Find all occurrences with context
+        matches = list(re.finditer(r'\b' + re.escape(skill) + r'\b', text))
+        contexts = [text[max(0,m.start()-50):min(len(text),m.end()+50)] for m in matches]
+        
+        # Calculate proficiency score (0-1)
+        score = 0.5  # base
+        
+        # Boost score based on context indicators
+        for ctx in contexts:
+            if any(w in ctx for w in ['expert', 'proficient', 'experienced']):
+                score = max(score, 1.0)
+            elif any(w in ctx for w in ['knowledge', 'familiar']):
+                score = max(score, 0.7)
+            elif any(w in ctx for w in ['project', 'built', 'developed']):
+                score = max(score, 0.9)
+        
+        # Boost if mentioned multiple times
+        if len(matches) > 1:
+            score = min(1.0, score + 0.1 * len(matches))
+            
+        categorized_skills[category][skill] = score
     
     # Extract keywords
     stop_words = STOP_WORDS
