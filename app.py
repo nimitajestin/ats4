@@ -382,14 +382,16 @@ def extract_resume_sections(text):
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
     try:
-        # Initialize all variables with defaults
+        # Initialize match percentage with a default value
+        match_percentage = {'score': 0, 'category_scores': {}}
+        
+        # Initialize other variables
         profile_summary = ""
         matched_keywords = []
         missing_keywords = []
         category_scores = {}
         skill_gaps = {}
         matched_skills = {}
-        recommendations = []
         
         # Perform analysis only if inputs exist
         if resume_text and jd_text:
@@ -406,7 +408,7 @@ def get_ats_feedback(resume_text, jd_text):
             matched_keywords.sort(key=lambda x: x[1], reverse=True)
             missing_keywords.sort(key=lambda x: x[1], reverse=True)
             
-            # Rest of your analysis code...
+            # Calculate match percentage
             match_percentage = calculate_match_percentage(resume_text, jd_text)
             
             education = analyze_education(resume_text)
@@ -419,21 +421,24 @@ def get_ats_feedback(resume_text, jd_text):
                     profile_summary += " | "
                 profile_summary += experience
             
-            # Skill category analysis...
-            
         return {
-            "JD Match": f"{match_percentage['score']}%" if 'match_percentage' in locals() else "0%",
+            "JD Match": f"{match_percentage['score']}%",
             "Profile Summary": profile_summary,
             "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
             "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
-            "Education": analyze_education(resume_text) if 'resume_text' in locals() else "No education details found",
-            "Experience": analyze_experience(resume_text) if 'resume_text' in locals() else "No experience details found",
-            "Projects": analyze_projects(resume_text)[:3] if 'resume_text' in locals() and analyze_projects(resume_text) else [],
-            "Achievements": analyze_achievements(resume_text)[:3] if 'resume_text' in locals() and analyze_achievements(resume_text) else [],
+            "Education": analyze_education(resume_text),
+            "Experience": analyze_experience(resume_text),
+            "Projects": analyze_projects(resume_text)[:3] if analyze_projects(resume_text) else [],
+            "Achievements": analyze_achievements(resume_text)[:3] if analyze_achievements(resume_text) else [],
             "Category Matches": match_percentage['category_scores'],
             "Skill Gaps": skill_gaps,
             "Matched Skills": matched_skills,
-            "Recommendations": generate_recommendations({"Projects": analyze_projects(resume_text), "Achievements": analyze_achievements(resume_text)}, jd_text, matched_skills, skill_gaps)
+            "Recommendations": generate_recommendations(
+                {"Projects": analyze_projects(resume_text), "Achievements": analyze_achievements(resume_text)},
+                jd_text,
+                matched_skills,
+                skill_gaps
+            )
         }
     except Exception as e:
         st.error(f"Error in text processing: {str(e)}")
