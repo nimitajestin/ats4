@@ -1,4 +1,12 @@
 import streamlit as st
+
+# Configure the Streamlit page settings
+st.set_page_config(
+    page_title="Verq ATS Evaluator",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
+
 import nltk
 import os                  
 import PyPDF2 as pdf      
@@ -34,13 +42,6 @@ def download_nltk_data():
 
 # Ensure NLTK data is downloaded before proceeding
 download_nltk_data()
-
-# Configure the Streamlit page settings
-st.set_page_config(
-    page_title="Verq ATS Evaluator",
-    layout="centered",
-    initial_sidebar_state="expanded"
-)
 
 # Custom CSS with new color scheme
 st.markdown("""
