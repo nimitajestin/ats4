@@ -491,50 +491,75 @@ if st.button(" Evaluate"):
         with tab2:
             st.markdown("### Skills Analysis")
             
-            # Always show skill categories if Category Matches exists
+            # Enhanced skill categories display
             if 'Category Matches' in results:
                 for category in ['Technical', 'Soft', 'Domain']:
                     match_pct = results['Category Matches'].get(category, 0)
                     progress_color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
                     
-                    # Create progress bar layout
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.markdown(f"**{category}**")
+                    # Create expandable section for each category
+                    with st.expander(f"{category} Skills - {match_pct}% Match", expanded=True):
+                        # Progress bar with match details
                         st.progress(match_pct/100)
-                    with col2:
-                        st.markdown(f"<h4 style='color: {progress_color}'>{match_pct}%</h4>", unsafe_allow_html=True)
-                    
-                    # Show missing skills if available
-                    if 'Skill Gaps' in results and category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                        st.caption(f"Missing: {', '.join(results['Skill Gaps'][category])}")
+                        
+                        # Show matched skills if available
+                        if 'Matched Skills' in results and category in results['Matched Skills']:
+                            st.markdown(f"**Your strong {category.lower()} skills:**")
+                            cols = st.columns(3)
+                            for i, skill in enumerate(results['Matched Skills'][category][:6]):
+                                cols[i%3].success(f"✓ {skill}")
+                        
+                        # Show missing skills if available
+                        if 'Skill Gaps' in results and category in results['Skill Gaps'] and results['Skill Gaps'][category]:
+                            st.markdown(f"**Recommended {category.lower()} skills to add:**")
+                            for skill in results['Skill Gaps'][category][:5]:
+                                st.error(f"- {skill}")
             
-            # Display strengths and areas for improvement
+            # Strengths vs Areas to Improve
+            st.markdown("### Strengths vs Areas for Improvement")
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("### Key Strengths")
-                for strength in results.get('Key Strengths', []):
-                    st.markdown(f"+ {strength}")
+                st.markdown("#### Your Key Strengths")
+                for strength in results.get('Key Strengths', [])[:5]:
+                    st.success(f"✓ {strength}")
             with col2:
-                st.markdown("### Areas to Add")
-                for keyword in results.get('Missing Keywords', []):
-                    st.markdown(f"- {keyword}")
+                st.markdown("#### Priority Areas")
+                for keyword in results.get('Missing Keywords', [])[:5]:
+                    st.error(f"⚠ {keyword}")
         
-        # Tab 3: Recommendations - Provide actionable feedback
+        # Tab 3: Recommendations - Enhanced actionable feedback
         with tab3:
-            # Show personalized recommendations
-            st.markdown("### Detailed Recommendations")
-            for i, rec in enumerate(results.get('Recommendations', []), 1):
-                st.markdown(f"{i}. {rec}")  # Numbered list of recommendations
+            st.markdown("### Personalized Recommendations")
             
-            # Display general resume improvement tips
-            st.markdown("### Pro Tips")
-            st.info("""
-            - Use industry-standard section headings
-            - Include relevant certifications
-            - Highlight achievements with metrics
-            - Keep formatting simple and consistent
-            """)
+            # Resume Structure Recommendations
+            with st.expander("Resume Structure", expanded=True):
+                if results.get('Recommendations', []):
+                    for i, rec in enumerate(results['Recommendations'][:3], 1):
+                        st.markdown(f"{i}. {rec}")
+                else:
+                    st.info("No specific structure recommendations available")
+            
+            # Skill Development Plan
+            with st.expander("Skill Development Plan", expanded=True):
+                if 'Skill Gaps' in results:
+                    st.markdown("**Focus on developing these skills:**")
+                    for category in ['Technical', 'Soft', 'Domain']:
+                        if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
+                            st.markdown(f"**{category}:** {', '.join(results['Skill Gaps'][category][:3])}")
+                else:
+                    st.success("Your skills match well with the job requirements!")
+            
+            # General Tips
+            with st.expander("General Resume Tips", expanded=True):
+                tips = [
+                    "Use strong action verbs (e.g., 'developed', 'managed', 'optimized')",
+                    "Quantify achievements with numbers where possible",
+                    "Keep resume to 1-2 pages maximum",
+                    "Use consistent formatting throughout",
+                    "Tailor your resume for each job application"
+                ]
+                for tip in tips:
+                    st.markdown(f"• {tip}")
     # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
