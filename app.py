@@ -167,12 +167,39 @@ def calculate_match_percentage(resume_text, jd_text):
         print(f"Error in calculate_match_percentage: {str(e)}")
         return {'score': 0, 'category_scores': {}}
 
-def extract_pdf_text(uploaded_file):
-    
-    reader = pdf.PdfReader(uploaded_file)
+def extract_text_from_pdf(pdf_path):
+    """Robust PDF text extraction with complete content capture"""
     text = ""
-    for page in reader.pages:
-        text += page.extract_text()
+    try:
+        with open(pdf_path, 'rb') as file:
+            reader = PyPDF2.PdfReader(file)
+            
+            # Extract text from each page with formatting preservation
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    # Clean and normalize text while preserving structure
+                    page_text = re.sub(r'\s+', ' ', page_text)  # Normalize whitespace
+                    page_text = re.sub(r'(?<=\w)-(?=\w)', '', page_text)  # Remove hyphens
+                    text += page_text + '\n\n'  # Preserve paragraph breaks
+    except Exception as e:
+        st.error(f"Error reading PDF: {str(e)}")
+    return text.strip()
+
+def preprocess_text(text):
+    """Enhanced text preprocessing for better analysis"""
+    # Preserve special characters that might indicate skills/qualifications
+    text = re.sub(r'([a-z])\s*[/&]\s*([a-z])', r'\1/\2', text.lower())  # Preserve skill combinations
+    
+    # Handle bullet points and special formatting
+    text = re.sub(r'•|\u2022', '*', text)  # Standardize bullet points
+    
+    # Remove unwanted characters but preserve meaningful symbols
+    text = re.sub(r'[^a-z0-9\s*&+\-/,]', ' ', text)
+    
+    # Normalize whitespace while preserving list structures
+    text = re.sub(r'\s+', ' ', text).strip()
+    
     return text
 
 def analyze_education(text):
@@ -386,7 +413,8 @@ if st.button(" Evaluate"):
     if uploaded_resume and jd_input.strip():
         # Show loading spinner while processing
         with st.spinner("Analyzing Resume..."):
-            resume_text = extract_pdf_text(uploaded_resume)
+            resume_text = extract_text_from_pdf(uploaded_resume)
+            resume_text = preprocess_text(resume_text)
             ats_response = get_ats_feedback(resume_text, jd_input)
             
             if ats_response:
