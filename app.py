@@ -317,63 +317,77 @@ def analyze_achievements(text):
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
     try:
-        # Enhanced keyword extraction with weights
+        # Define skill categories and their subcategories
+        SKILL_CATEGORIES = {
+            'Technical': ['Programming', 'Tools', 'Frameworks', 'Databases', 'DevOps'],
+            'Domain': ['Industry', 'Regulatory', 'Methodologies', 'Standards'],
+            'Soft': ['Communication', 'Leadership', 'Teamwork', 'Problem Solving']
+        }
+        
+        # Enhanced keyword extraction with category mapping
         resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
         jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
         
-        # Calculate keyword frequencies
-        resume_kw_freq = {kw: resume_keywords.count(kw) for kw in set(resume_keywords)}
-        jd_kw_freq = {kw: jd_keywords.count(kw) for kw in set(jd_keywords)}
-        
-        # Improved matching with weighted scores
-        missing_keywords = []
-        matched_keywords = []
-        
-        for kw in set(jd_keywords):
-            if kw in resume_keywords:
-                matched_keywords.append((kw, jd_kw_freq[kw]))  # (keyword, importance)
-            else:
-                missing_keywords.append((kw, jd_kw_freq[kw]))
-        
-        # Sort by importance (frequency in JD)
-        matched_keywords.sort(key=lambda x: x[1], reverse=True)
-        missing_keywords.sort(key=lambda x: x[1], reverse=True)
-        
-        # Enhanced skill category analysis
-        skill_gaps = {}
-        matched_skills = {}
+        # Calculate weighted scores for each main category
         category_scores = {}
+        matched_skills = {}
+        skill_gaps = {}
         
-        # Define skill category weights
-        CATEGORY_WEIGHTS = {
-            'Technical': 1.2,
-            'Domain': 1.1,
-            'Soft': 0.8
-        }
-        
-        for category in SKILL_CATEGORIES:
-            jd_skills = set(jd_categories.get(category, []))
-            resume_skills = set(resume_categories.get(category, []))
+        for main_category, subcategories in SKILL_CATEGORIES.items():
+            # Calculate category weight (Technical > Domain > Soft)
+            weight = 1.5 if main_category == 'Technical' else 1.2 if main_category == 'Domain' else 0.8
             
+            # Aggregate all skills in this category
+            jd_skills = set()
+            resume_skills = set()
+            
+            for subcat in subcategories:
+                jd_skills.update(jd_categories.get(subcat, []))
+                resume_skills.update(resume_categories.get(subcat, []))
+            
+            # Calculate matches and gaps
             matched = list(jd_skills & resume_skills)
             gaps = list(jd_skills - resume_skills)
             
-            # Calculate weighted match score
+            # Store top matches and gaps
+            matched_skills[main_category] = sorted(matched, 
+                key=lambda x: jd_keywords.count(x), reverse=True)[:8]
+            skill_gaps[main_category] = sorted(gaps, 
+                key=lambda x: jd_keywords.count(x), reverse=True)[:5]
+            
+            # Calculate weighted score
             if jd_skills:
                 base_score = len(matched) / len(jd_skills) * 100
-                weighted_score = base_score * CATEGORY_WEIGHTS.get(category, 1.0)
             else:
-                # Credit for additional resume skills (diminishing returns)
-                weighted_score = min(len(resume_skills) * 5, 30)  # Max 30% bonus
+                base_score = min(len(resume_skills) * 5, 30)  # Bonus for extra skills
                 
-            matched_skills[category] = matched[:8]  # Show top 8 matches
-            skill_gaps[category] = gaps[:5]        # Show top 5 gaps
-            category_scores[category] = min(round(weighted_score, 1), 100)
+            category_scores[main_category] = min(round(base_score * weight, 1), 100)
         
-        # Calculate overall match percentage (weighted average)
+        # Calculate overall match percentage
         total_score = sum(category_scores.values())
-        max_possible = sum(CATEGORY_WEIGHTS.get(c, 1.0) * 100 for c in SKILL_CATEGORIES)
+        max_possible = sum(
+            1.5 if cat == 'Technical' else 
+            1.2 if cat == 'Domain' else 
+            0.8 for cat in SKILL_CATEGORIES
+        ) * 100
         match_percentage = round((total_score / max_possible) * 100, 1)
+        
+        # Generate category-specific recommendations
+        recommendations = []
+        for category in SKILL_CATEGORIES:
+            score = category_scores[category]
+            gaps = skill_gaps[category]
+            
+            if score < 40:
+                rec = f"Urgently improve {category} skills"
+                if gaps:
+                    rec += f" - focus on: {', '.join(gaps[:3])}"
+                recommendations.append(rec)
+            elif score < 70:
+                rec = f"Strengthen {category} skills"
+                if gaps:
+                    rec += f" - consider adding: {', '.join(gaps[:2])}"
+                recommendations.append(rec)
         
         # Enhanced recommendation engine
         recommendations = []
