@@ -530,6 +530,7 @@ if st.button(" Evaluate"):
         st.warning("Please upload a resume and enter a job description.")
 
 def display_skills_analysis(results, match_pct):
+    """Display detailed skills analysis using match_pct"""
     st.subheader("Skills Analysis")
     
     for category, score in results['Category Matches'].items():
