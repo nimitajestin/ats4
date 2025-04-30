@@ -435,11 +435,10 @@ def get_ats_feedback(resume_text, jd_text):
         elif len(projects) < 2:
             recommendations.append("Include more projects that showcase relevant skills")
         
-        profile_summary = ""
         education = analyze_education(resume_text)
         experience = analyze_experience(resume_text)
         if education:
-            profile_summary += education.strip().capitalize()
+            profile_summary = education.strip().capitalize()
         if experience:
             if profile_summary:
                 profile_summary += " | "
@@ -447,35 +446,21 @@ def get_ats_feedback(resume_text, jd_text):
         
         return {
             "JD Match": f"{match_percentage}%",
-            "Profile Summary": profile_summary or "",
-            "Key Strengths": [kw[0] for kw in matched_keywords[:5]] if 'matched_keywords' in locals() else [],
-            "Missing Keywords": [kw[0] for kw in missing_keywords[:5]] if 'missing_keywords' in locals() else [],
-            "Education": analyze_education(resume_text) or "",
-            "Experience": analyze_experience(resume_text) or "",
+            "Profile Summary": profile_summary,
+            "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
+            "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
+            "Education": analyze_education(resume_text) or "No education details found",
+            "Experience": analyze_experience(resume_text) or "No experience details found",
             "Projects": analyze_projects(resume_text)[:3] if analyze_projects(resume_text) else [],
             "Achievements": analyze_achievements(resume_text)[:3] if analyze_achievements(resume_text) else [],
-            "Category Matches": category_scores if 'category_scores' in locals() else {},
-            "Skill Gaps": skill_gaps if 'skill_gaps' in locals() else {},
-            "Matched Skills": matched_skills if 'matched_skills' in locals() else {},
-            "Recommendations": recommendations if 'recommendations' in locals() else []
+            "Category Matches": category_scores,
+            "Skill Gaps": skill_gaps,
+            "Matched Skills": matched_skills,
+            "Recommendations": recommendations
         }
     except Exception as e:
-        st.error(f"Analysis error: {str(e)}")
-        # Return structure with empty defaults if analysis fails
-        return {
-            "JD Match": "0%",
-            "Profile Summary": "",
-            "Key Strengths": [],
-            "Missing Keywords": [],
-            "Education": "",
-            "Experience": "",
-            "Projects": [],
-            "Achievements": [],
-            "Category Matches": {},
-            "Skill Gaps": {},
-            "Matched Skills": {},
-            "Recommendations": ["Analysis failed - please check your inputs"]
-        }
+        st.error(f"Error in text processing: {str(e)}")
+        return None
 
 # Streamlit App Interface
 
