@@ -656,41 +656,27 @@ if st.button(" Evaluate"):
     
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
-            try:
-                results = json.loads(ats_response)
-            except json.JSONDecodeError:
-                st.error("Failed to parse analysis results")
-                return
+            results = json.loads(ats_response)
         else:
             results = ats_response
         
-        try:
-            # Display basic results with colored match percentage
-            match_pct = results.get('JD Match', '0%')
-            color = 'green' if float(match_pct.strip('%')) >= 70 else 'orange' if float(match_pct.strip('%')) >= 50 else 'red'
-            st.markdown(f"<h3 style='color: {color};'>Overall Match: {match_pct}</h3>", unsafe_allow_html=True)
+        # Display basic results
+        st.markdown(f"#### Overall Match: {results.get('JD Match', '0%')}")
+        
+        # Show key strengths and missing keywords
+        st.markdown("##### Key Strengths")
+        for strength in results.get('Key Strengths', [])[:5]:
+            st.markdown(f"- {strength}")
             
-            # Show key strengths and areas for improvement in columns
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Key Strengths**")
-                for strength in results.get('Key Strengths', [])[:3]:
-                    st.success(f"✓ {strength}")
-            with col2:
-                st.markdown("**Areas for Improvement**")
-                for keyword in results.get('Missing Keywords', [])[:3]:
-                    st.error(f"✗ {keyword}")
+        st.markdown("##### Areas for Improvement")
+        for keyword in results.get('Missing Keywords', [])[:5]:
+            st.markdown(f"- {keyword}")
             
-            # Show top 3 recommendations
-            if results.get('Recommendations'):
-                st.markdown("---")
-                st.markdown("**Recommendations**")
-                for rec in results['Recommendations'][:3]:
-                    st.info(f"• {rec}")
-                    
-        except Exception as e:
-            st.error(f"Error displaying results: {str(e)}")
-            return None  # Proper return statement inside function
+        # Show basic recommendations
+        if results.get('Recommendations'):
+            st.markdown("##### Recommendations")
+            for rec in results['Recommendations'][:3]:
+                st.markdown(f"- {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
 
@@ -699,7 +685,6 @@ if st.button(" Evaluate"):
             display_enhanced_results(results)
         except json.JSONDecodeError:
             st.error("Failed to parse analysis results")
-            return None
         except Exception as e:
             st.error(f"Error displaying results: {str(e)}")
             return None
