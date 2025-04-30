@@ -516,25 +516,22 @@ if st.button(" Evaluate"):
         # Combine with extracted sections
         results.update(resume_sections)
         
-        # Calculate match score directly without intermediate variable
-        try:
-            match_score = (
-                float(results.get('Match Percentage', 0)) if isinstance(results.get('Match Percentage'), (int, float)) 
-                else float(str(results.get('JD Match', '0%')).replace('%', '').strip()) 
-                if 'JD Match' in results 
-                else 0
-            )
-            results['Match Percentage'] = max(0, min(100, match_score))
-        except (ValueError, AttributeError):
-            results['Match Percentage'] = 0
-        
-        # Display with color coding
-        color = 'green' if results['Match Percentage'] >= 80 \
-                else 'orange' if results['Match Percentage'] >= 60 \
-                else 'red'
+        # Directly calculate and display match percentage without variables
         st.markdown(
-            f"<h2 style='color: {color}; text-align: center;'>"
-            f"Overall Match: {results['Match Percentage']:.1f}%</h2>", 
+            f"<h2 style='color: {'green' if max(0, min(100, float(
+                str(results.get('Match Percentage', 0)) if isinstance(results.get('Match Percentage'), (int, float, str)) and str(results.get('Match Percentage', 0)).replace('.','').isdigit()
+                else str(results.get('JD Match', '0%')).replace('%','') if 'JD Match' in results
+                else '0'
+            ))) >= 80 else 'orange' if max(0, min(100, float(
+                str(results.get('Match Percentage', 0)) if isinstance(results.get('Match Percentage'), (int, float, str)) and str(results.get('Match Percentage', 0)).replace('.','').isdigit()
+                else str(results.get('JD Match', '0%')).replace('%','') if 'JD Match' in results
+                else '0'
+            ))) >= 60 else 'red'}; text-align: center;'>"
+            f"Overall Match: {max(0, min(100, float(
+                str(results.get('Match Percentage', 0)) if isinstance(results.get('Match Percentage'), (int, float, str)) and str(results.get('Match Percentage', 0)).replace('.','').isdigit()
+                else str(results.get('JD Match', '0%')).replace('%','') if 'JD Match' in results
+                else '0'
+            ))):.1f}%</h2>", 
             unsafe_allow_html=True
         )
         
