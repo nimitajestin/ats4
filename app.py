@@ -1,21 +1,17 @@
 import streamlit as st
 
-# Configure the Streamlit page settings
-st.set_page_config(
-    page_title="Verq ATS Evaluator", 
-    layout="centered",               
-    initial_sidebar_state="expanded"  
-)
+# Download required NLTK data
+try:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('maxent_ne_chunker')
+    nltk.download('words')
 
-st.markdown("""
-<style>
-    .stApp {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-</style>
-""", unsafe_allow_html=True)
-
+import nltk
 import os                  
 import PyPDF2 as pdf      
 import json               
@@ -26,7 +22,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity      
 
 
-import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize  # For breaking text into words and sentences
 from nltk.corpus import stopwords                       # For removing common words (e.g., 'the', 'is', 'at')
 
