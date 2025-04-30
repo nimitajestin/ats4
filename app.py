@@ -11,19 +11,29 @@ from nltk.tokenize import word_tokenize, sent_tokenize  # For breaking text into
 from nltk.corpus import stopwords                       # For removing common words (e.g., 'the', 'is', 'at')
 
 # Download required NLTK data
-nltk_data_packages = [
-    'punkt',
-    'stopwords',
-    'averaged_perceptron_tagger',
-    'maxent_ne_chunker',
-    'words'
-]
+def download_nltk_data():
+    required_packages = [
+        'punkt',
+        'stopwords',
+        'averaged_perceptron_tagger',
+        'maxent_ne_chunker',
+        'words'
+    ]
+    
+    for package in required_packages:
+        try:
+            if package == 'punkt':
+                nltk.data.find('tokenizers/punkt')
+            elif package == 'stopwords':
+                nltk.data.find('corpora/stopwords')
+            else:
+                nltk.data.find(package)
+        except LookupError:
+            with st.spinner(f'Downloading required NLTK data ({package})...'):
+                nltk.download(package, quiet=True)
 
-for package in nltk_data_packages:
-    try:
-        nltk.data.find(f'tokenizers/{package}' if package == 'punkt' else package)
-    except LookupError:
-        nltk.download(package)
+# Ensure NLTK data is downloaded before proceeding
+download_nltk_data()
 
 # Configure the Streamlit page settings
 st.set_page_config(
