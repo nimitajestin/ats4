@@ -167,21 +167,16 @@ def calculate_match_percentage(resume_text, jd_text):
         print(f"Error in calculate_match_percentage: {str(e)}")
         return {'score': 0, 'category_scores': {}}
 
-def extract_text_from_pdf(pdf_path):
-    """Robust PDF text extraction with complete content capture"""
+def extract_text_from_pdf(uploaded_file):
+    """Handle Streamlit UploadedFile objects"""
     text = ""
     try:
-        with open(pdf_path, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            
-            # Extract text from each page with formatting preservation
-            for page in reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    # Clean and normalize text while preserving structure
-                    page_text = re.sub(r'\s+', ' ', page_text)  # Normalize whitespace
-                    page_text = re.sub(r'(?<=\w)-(?=\w)', '', page_text)  # Remove hyphens
-                    text += page_text + '\n\n'  # Preserve paragraph breaks
+        reader = PyPDF2.PdfReader(uploaded_file)
+        for page in reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                page_text = re.sub(r'\s+', ' ', page_text)
+                text += page_text + '\n\n'
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
     return text.strip()
@@ -419,7 +414,7 @@ if st.button(" Evaluate"):
             
             if ats_response:
                 st.markdown("---")
-                st.markdown("###  ATS Evaluation Results")
+                st.markdown("### ATS Evaluation Results")
         
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
@@ -427,11 +422,13 @@ if st.button(" Evaluate"):
         else:
             results = ats_response
         
-        # Display match percentage with color coding
-        # Green: ≥80%, Orange: ≥60%, Red: <60%
-        match_pct = float(results.get('JD Match', '0%').strip('%'))
+        # Safely handle match percentage
+        match_str = results.get('JD Match', '0%')
+        match_pct = float(match_str.strip('%')) if '%' in match_str else float(match_str)
+        
         color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results.get('JD Match', 'N/A')}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_str}</h2>", 
+                   unsafe_allow_html=True)
         
         # Create three tabs for organized results display
         tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
