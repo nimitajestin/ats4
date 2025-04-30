@@ -556,13 +556,13 @@ def get_ats_feedback(resume_text, jd_text):
         
         # 1. Overall match quality
         if match_percentage < 40:
-            recommendations.append("🔴 Major Improvement Needed: Your resume shows significant gaps compared to the job requirements")
+            recommendations.append(" Major Improvement Needed: Your resume shows significant gaps compared to the job requirements")
         elif match_percentage < 65:
-            recommendations.append("🟠 Moderate Improvement Needed: Several key areas need enhancement")
+            recommendations.append(" Moderate Improvement Needed: Several key areas need enhancement")
         elif match_percentage < 85:
-            recommendations.append("🟡 Minor Improvements: Your resume is good but could be stronger")
+            recommendations.append(" Minor Improvements: Your resume is good but could be stronger")
         else:
-            recommendations.append("🟢 Strong Match: Your resume aligns well with the job requirements")
+            recommendations.append(" Strong Match: Your resume aligns well with the job requirements")
         
         # 2. Category-specific recommendations
         for category in SKILL_CATEGORIES:
@@ -570,7 +570,7 @@ def get_ats_feedback(resume_text, jd_text):
             gaps = skill_gaps[category]
             
             if score < 50:
-                rec = f"⚠️ Focus on {category} skills: "
+                rec = f" Focus on {category} skills: "
                 if gaps:
                     rec += f"Add {', '.join(gaps[:3])}"
                 else:
@@ -584,18 +584,18 @@ def get_ats_feedback(resume_text, jd_text):
         if not analyze_experience(resume_text):
             sections_missing.append("work experience")
         if sections_missing:
-            recommendations.append(f"✏️ Add missing sections: {', '.join(sections_missing)}")
+            recommendations.append(f" Add missing sections: {', '.join(sections_missing)}")
         
         # 4. Impactful writing suggestions
         if len(analyze_achievements(resume_text)) < 2:
-            recommendations.append("💡 Add more achievements with quantifiable results (e.g., 'Increased sales by 30%')")
+            recommendations.append(" Add more achievements with quantifiable results (e.g., 'Increased sales by 30%')")
         
         # 5. Skill demonstration
         projects = analyze_projects(resume_text)
         if not projects:
-            recommendations.append("🛠️ Add projects demonstrating your technical skills")
+            recommendations.append(" Add projects demonstrating your technical skills")
         elif len(projects) < 2:
-            recommendations.append("🛠️ Include more projects that showcase relevant skills")
+            recommendations.append(" Include more projects that showcase relevant skills")
         
         return {
             "JD Match": f"{match_percentage}%",
@@ -656,7 +656,11 @@ if st.button(" Evaluate"):
     
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
-            results = json.loads(ats_response)
+            try:
+                results = json.loads(ats_response)
+            except json.JSONDecodeError:
+                st.error("Failed to parse analysis results")
+                return
         else:
             results = ats_response
         
@@ -679,12 +683,3 @@ if st.button(" Evaluate"):
                 st.markdown(f"- {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
-
-        try:
-            # Display enhanced results
-            display_enhanced_results(results)
-        except json.JSONDecodeError:
-            st.error("Failed to parse analysis results")
-        except Exception as e:
-            st.error(f"Error displaying results: {str(e)}")
-            return None
