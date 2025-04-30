@@ -503,98 +503,51 @@ if st.button(" Evaluate"):
         
         # Tab 1: Overview - Display basic profile information
         with tab1:
-            # Show profile summary
-            st.markdown("### Profile Summary")
-            st.info(results.get('Profile Summary', ''))
+            st.subheader("Candidate Overview")
+            st.write(f"**Match Score:** {match_str}")
+            st.write(f"**Profile Summary:** {results.get('Profile Summary', 'N/A')}")
             
-            # Display education and experience in two columns
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("### Education")
-                st.write(results.get('Education', ''))
-            with col2:
-                st.markdown("### Experience")
-                st.write(results.get('Experience', ''))
+            # Education section
+            st.subheader("Education")
+            st.write(results.get('Education', 'N/A'))
             
-            # Display projects and achievements if available
-            if results.get('Projects', []) or results.get('Achievements', []):
-                st.markdown("### Key Highlights")
-                
-                # Show top 3 projects
-                if results.get('Projects', []):
-                    st.markdown("#### Notable Projects")
-                    for project in results['Projects'][:3]:
-                        st.markdown(f"* {project.capitalize()}")
-                
-                # Show top 3 achievements
-                if results.get('Achievements', []):
-                    st.markdown("#### Key Achievements")
-                    for achievement in results['Achievements'][:3]:
-                        st.markdown(f"* {achievement.capitalize()}")
+            # Experience section
+            st.subheader("Experience")
+            st.write(results.get('Experience', 'N/A'))
         
         # Tab 2: Skills Analysis - Show detailed skill matching and gaps
         with tab2:
-            st.markdown("### Skills Analysis")
-            
-            for category, score in results['Category Matches'].items():
-                if score > 0:
-                    color = 'green' if score >= 80 else 'orange' if score >= 60 else 'red'
-                    st.markdown(f"<span style='color:{color}'>{category} - {score}% Match</span>", unsafe_allow_html=True)
-                    
-                    # Show matched skills
-                    if category in results.get('Matched Skills', {}):
-                        st.markdown(f"**Your strong {category.lower()} skills:**")
-                        cols = st.columns(3)
-                        for i, skill in enumerate(results['Matched Skills'][category][:6]):
-                            cols[i%3].success(f"✓ {skill}")
-                    
-                    # Show skill gaps
-                    if category in results.get('Skill Gaps', {}) and results['Skill Gaps'][category]:
-                        st.markdown(f"**Recommended {category.lower()} skills to add:**")
-                        for skill in results['Skill Gaps'][category][:3]:
-                            st.error(f"- {skill}")
-                else:
-                    st.markdown(f"{category} - No matching skills found")
+            # Skills analysis using match_pct instead of match_percentage
+            st.subheader("Skills Analysis")
+            display_skills_analysis(results, match_pct)
         
         # Tab 3: Recommendations - Enhanced feedback and suggestions
         with tab3:
-            st.markdown("### Personalized Recommendations")
-            
-            # Resume Structure Recommendations
-            with st.expander("Resume Structure", expanded=True):
-                if results.get('Projects', []):
-                    st.success("✔ You have a good projects section")
-                else:
-                    st.error("✘ Add a projects section with 2-3 relevant projects")
-                
-                if results.get('Achievements', []):
-                    st.success("✔ Good job highlighting achievements")
-                else:
-                    st.error("✘ Add an achievements section with quantifiable results")
-                
-                st.info("💡 General tips:")
-                st.markdown("""
-                - Use bullet points for readability
-                - Keep resume to 1-2 pages maximum
-                - Use strong action verbs (developed, optimized, led)
-                - Quantify achievements with metrics
-                """)
-            
-            # Skill Development Recommendations
-            with st.expander("Skill Development", expanded=True):
-                if 'Skill Gaps' in results:
-                    for category in results['Skill Gaps']:
-                        if results['Skill Gaps'][category]:
-                            st.error(f"Develop {category} skills: {', '.join(results['Skill Gaps'][category][:3])}")
-                    
-                    st.info("💡 Learning resources:")
-                    st.markdown("""
-                    - [FreeCodeCamp](https://www.freecodecamp.org/)
-                    - [Coursera](https://www.coursera.org/)
-                    - [Udemy](https://www.udemy.com/)
-                    """)
-                else:
-                    st.success("✔ Your skills match well with the job requirements!")
+            st.subheader("Recommendations")
+            st.write(results.get('Recommendations', 'N/A'))    
     # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
+
+def display_skills_analysis(results, match_pct):
+    st.subheader("Skills Analysis")
+    
+    for category, score in results['Category Matches'].items():
+        if score > 0:
+            color = 'green' if score >= 80 else 'orange' if score >= 60 else 'red'
+            st.markdown(f"<span style='color:{color}'>{category} - {score}% Match</span>", unsafe_allow_html=True)
+            
+            # Show matched skills
+            if category in results.get('Matched Skills', {}):
+                st.markdown(f"**Your strong {category.lower()} skills:**")
+                cols = st.columns(3)
+                for i, skill in enumerate(results['Matched Skills'][category][:6]):
+                    cols[i%3].success(f"✓ {skill}")
+            
+            # Show skill gaps
+            if category in results.get('Skill Gaps', {}) and results['Skill Gaps'][category]:
+                st.markdown(f"**Recommended {category.lower()} skills to add:**")
+                for skill in results['Skill Gaps'][category][:3]:
+                    st.error(f"- {skill}")
+        else:
+            st.markdown(f"{category} - No matching skills found")
