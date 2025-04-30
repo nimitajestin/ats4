@@ -516,19 +516,34 @@ if st.button(" Evaluate"):
         # Combine with extracted sections
         results.update(resume_sections)
         
-        # Safe match percentage calculation
-        def get_match_pct(results):
-            try:
-                if isinstance(results.get('Match Percentage'), (int, float)):
-                    return max(0, min(100, float(results['Match Percentage'])))
-                if 'JD Match' in results:
-                    return max(0, min(100, float(str(results['JD Match']).replace('%',''))))
-                return 0
-            except:
-                return 0
+        # Calculate and handle match percentage
+        try:
+            match_data = calculate_match_percentage(analysis_text, jd_input)
+            results.update({
+                'Match Percentage': match_data.get('score', 0),
+                'Category Matches': match_data.get('category_scores', {}),
+                'Skill Gaps': {cat: [] for cat in DOMAIN_CATEGORIES}
+            })
+            
+            # Display with color coding
+            pct = results['Match Percentage']
+            color = 'green' if pct >= 80 else 'orange' if pct >= 60 else 'red'
+            st.markdown(
+                f"<h2 style='color: {color}; text-align: center;'>"
+                f"Overall Match: {pct:.1f}%</h2>", 
+                unsafe_allow_html=True
+            )
+            
+        except Exception as e:
+            st.error(f"Match calculation error: {str(e)}")
+            results.update({
+                'Match Percentage': 0,
+                'Category Matches': {},
+                'Skill Gaps': {}
+            })
         
         # Display results
-        match_pct = get_match_pct(results)
+        match_pct = results['Match Percentage']
         color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
         st.markdown(
             f"<h2 style='color: {color}; text-align: center;'>"
