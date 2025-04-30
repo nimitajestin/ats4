@@ -1,78 +1,97 @@
 import streamlit as st
+import nltk
+import os
+import PyPDF2 as pdf
+import json
+import re
+from collections import Counter
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.corpus import stopwords
 
 # Configure the Streamlit page settings
 st.set_page_config(
-    page_title="Verq ATS Evaluator",
-    layout="centered",
-    initial_sidebar_state="expanded"
+    page_title="Verq ATS Evaluator", 
+    layout="centered",               
+    initial_sidebar_state="expanded"  
 )
 
-import nltk
-import os                  
-import PyPDF2 as pdf      
-import json               
-import re                 
-from collections import Counter  
-from sklearn.feature_extraction.text import TfidfVectorizer  
-from sklearn.metrics.pairwise import cosine_similarity      
-from nltk.tokenize import RegexpTokenizer  
-from nltk.corpus import stopwords
+st.markdown("""
+<style>
+    .stApp {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# Initialize tokenizer
-word_tokenizer = RegexpTokenizer(r'\w+')
-
-# Download required NLTK data
+# Set NLTK data path and download required data
 @st.cache_resource
 def download_nltk_data():
     try:
-        # Download stopwords
-        try:
-            nltk.data.find('corpora/stopwords')
-        except LookupError:
-            with st.spinner('Downloading stopwords...'):
-                nltk.download('stopwords', quiet=True)
+        # Create nltk_data directory in the current working directory
+        nltk_dir = os.path.join(os.getcwd(), "nltk_data")
+        if not os.path.exists(nltk_dir):
+            os.makedirs(nltk_dir)
         
-        # Download other required packages
-        other_packages = ['averaged_perceptron_tagger', 'maxent_ne_chunker', 'words']
-        for package in other_packages:
+        # Set NLTK data path
+        nltk.data.path.append(nltk_dir)
+        
+        # Download all required NLTK data
+        required_data = [
+            'punkt',         # For tokenization
+            'stopwords',     # For stop words
+            'wordnet',      # For lemmatization
+            'averaged_perceptron_tagger',  # For POS tagging
+            'omw-1.4'       # Open Multilingual WordNet
+        ]
+        
+        for resource in required_data:
             try:
-                nltk.data.find(package)
+                nltk.data.find(resource)
             except LookupError:
-                with st.spinner(f'Downloading {package}...'):
-                    nltk.download(package, quiet=True)
+                with st.spinner(f'Downloading NLTK data: {resource}...'):
+                    nltk.download(resource, download_dir=nltk_dir, quiet=True)
         
-        return True
+        # Special handling for punkt_tab
+        try:
+            nltk.data.find('tokenizers/punkt')
+        except LookupError:
+            with st.spinner('Downloading punkt tokenizer data...'):
+                nltk.download('punkt', download_dir=nltk_dir, quiet=True)
+                
+        # Verify punkt_tab is available
+        try:
+            nltk.data.find('tokenizers/punkt/PY3/english.pickle')
+        except LookupError:
+            # If still not found, try alternative download method
+            import urllib.request
+            import shutil
+            punkt_url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/tokenizers/punkt.zip"
+            punkt_dir = os.path.join(nltk_dir, "tokenizers", "punkt")
+            os.makedirs(punkt_dir, exist_ok=True)
+            zip_path = os.path.join(punkt_dir, "punkt.zip")
+            urllib.request.urlretrieve(punkt_url, zip_path)
+            shutil.unpack_archive(zip_path, punkt_dir)
+            os.remove(zip_path)
+            
     except Exception as e:
         st.error(f"Error downloading NLTK data: {str(e)}")
-        return False
-
-# Ensure NLTK data is downloaded before proceeding
-if not download_nltk_data():
-    st.error('Failed to download required NLTK data. Please try refreshing the page.')
-    st.stop()
-
-def tokenize_text(text):
-    """Helper function to tokenize text consistently"""
-    return word_tokenizer.tokenize(text.lower())
+        st.stop()  # Stop execution if NLTK data can't be loaded
+# Call this at the very beginning
+download_nltk_data()
 
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
-    
     'Web Technologies': ['html', 'html5', 'css', 'css3', 'react', 'reactjs', 'angular', 'vue', 'nodejs', 'node.js', 'django', 'flask', 'express', 'jquery', 'bootstrap', 'sass', 'less', 'webpack', 'vite', 'nextjs', 'graphql', 'rest api', 'restful'],
-    
     'Database': ['sql', 'mysql', 'postgresql', 'postgres', 'mongodb', 'mongo', 'oracle', 'redis', 'elasticsearch', 'dynamodb', 'firebase', 'cassandra', 'mariadb', 'sqlite', 'nosql'],
-    
- 
     'Cloud & DevOps': ['aws', 'amazon', 'azure', 'microsoft azure', 'gcp', 'google cloud', 'docker', 'kubernetes', 'k8s', 'jenkins', 'terraform', 'ci/cd', 'cicd', 'git', 'github', 'gitlab', 'bitbucket', 'linux', 'unix', 'bash', 'shell'],
-    
- 
     'Data Science': ['machine learning', 'ml', 'deep learning', 'dl', 'nlp', 'natural language processing', 'pandas', 'numpy', 'scipy', 'scikit-learn', 'sklearn', 'tensorflow', 'pytorch', 'keras', 'computer vision', 'cv', 'ai', 'artificial intelligence', 'data mining', 'statistics'],
-    
     'Soft Skills': ['leadership', 'communication', 'teamwork', 'team player', 'problem solving', 'analytical', 'project management', 'agile', 'scrum', 'time management', 'collaboration', 'critical thinking', 'attention to detail', 'multitasking']
 }
 
 EDUCATION_TERMS = [
-
     'bachelor', 'master', 'phd', 'degree', 
     'b.tech', 'b.e', 'm.tech', 'bsc', 'msc',
     'computer science', 'cs', 'information technology', 'it',
@@ -83,84 +102,90 @@ EDUCATION_TERMS = [
     'gpa', 'cgpa', 'grade', 'honors', 'distinction'
 ]
 
-
 @st.cache_data
 def extract_skills_and_keywords(text):
-    text = text.lower()
-    text = re.sub(r'\s+', ' ', text)
+    try:
+        text = text.lower()
+        text = re.sub(r'\s+', ' ', text)
+        
+        # Ensure NLTK data is available
+        download_nltk_data()
+        
+        categorized_skills = {category: {} for category in SKILL_CATEGORIES}
+        
+        def find_skill_variations(skill):
+            variations = [skill]
+            skill_variations = {
+                'js': 'javascript',
+                'ts': 'typescript',
+                'py': 'python',
+                'cpp': 'c++',
+                'react': 'reactjs',
+                'vue': 'vuejs',
+                'node': 'nodejs',
+                'aws': 'amazon web services',
+                'ml': 'machine learning',
+                'ai': 'artificial intelligence',
+                'dl': 'deep learning',
+                'nlp': 'natural language processing',
+                'db': 'database',
+                'ui': 'user interface',
+                'ux': 'user experience',
+                'api': 'application programming interface'
+            }
+            if skill in skill_variations:
+                variations.append(skill_variations[skill])
+            for abbr, full in skill_variations.items():
+                if skill == full:
+                    variations.append(abbr)
+            return variations
+        
+        for category, skills in SKILL_CATEGORIES.items():
+            for skill in skills:
+                variations = find_skill_variations(skill)
+                for variation in variations:
+                    pattern = r'\b' + re.escape(variation) + r'\b'
+                    matches = re.finditer(pattern, text)
+                    for match in matches:
+                        context_start = max(0, match.start() - 50)
+                        context_end = min(len(text), match.end() + 50)
+                        context = text[context_start:context_end]
+                        
+                        confidence = 0.8  # Base confidence
+                        tech_indicators = ['developed', 'implemented', 'built', 'created', 'designed', 'managed', 'led']
+                        if any(indicator in context for indicator in tech_indicators):
+                            confidence = 0.9
+                        if any(tech in context for tech in ['project', 'application', 'system', 'software']):
+                            confidence = 1.0
+                        
+                        categorized_skills[category][skill] = max(
+                            confidence,
+                            categorized_skills[category].get(skill, 0)
+                        )
+        
+        stop_words = set(stopwords.words('english'))
+        words = word_tokenize(text)
+        words = [word.lower() for word in words if word.isalnum() and word.lower() not in stop_words]
+        
+        bigrams = [' '.join(pair) for pair in zip(words[:-1], words[1:])]
+        trigrams = [' '.join(triple) for triple in zip(words[:-2], words[1:-1], words[2:])]
+        
+        all_terms = words + bigrams + trigrams
+        term_freq = Counter(all_terms)
+        
+        terms = [term for term, freq in term_freq.most_common(100) 
+                 if len(term) > 2 or freq > 2]  # Filter out short, infrequent terms
+        
+        categorized_skills = {k: [skill for skill, conf in v.items() if conf >= 0.8] 
+                             for k, v in categorized_skills.items()}
+        
+        categorized_skills = {k: v for k, v in categorized_skills.items() if v}
+        
+        return terms, categorized_skills
     
-    categorized_skills = {category: {} for category in SKILL_CATEGORIES}
-    
-    def find_skill_variations(skill):
-        variations = [skill]
-        skill_variations = {
-            'js': 'javascript',
-            'ts': 'typescript',
-            'py': 'python',
-            'cpp': 'c++',
-            'react': 'reactjs',
-            'vue': 'vuejs',
-            'node': 'nodejs',
-            'aws': 'amazon web services',
-            'ml': 'machine learning',
-            'ai': 'artificial intelligence',
-            'dl': 'deep learning',
-            'nlp': 'natural language processing',
-            'db': 'database',
-            'ui': 'user interface',
-            'ux': 'user experience',
-            'api': 'application programming interface'
-        }
-        if skill in skill_variations:
-            variations.append(skill_variations[skill])
-        for abbr, full in skill_variations.items():
-            if skill == full:
-                variations.append(abbr)
-        return variations
-    
-    for category, skills in SKILL_CATEGORIES.items():
-        for skill in skills:
-            variations = find_skill_variations(skill)
-            for variation in variations:
-                pattern = r'\b' + re.escape(variation) + r'\b'
-                matches = re.finditer(pattern, text)
-                for match in matches:
-                    context_start = max(0, match.start() - 50)
-                    context_end = min(len(text), match.end() + 50)
-                    context = text[context_start:context_end]
-                    
-                    confidence = 0.8  # Base confidence
-                    tech_indicators = ['developed', 'implemented', 'built', 'created', 'designed', 'managed', 'led']
-                    if any(indicator in context for indicator in tech_indicators):
-                        confidence = 0.9
-                    if any(tech in context for tech in ['project', 'application', 'system', 'software']):
-                        confidence = 1.0
-                    
-                    categorized_skills[category][skill] = max(
-                        confidence,
-                        categorized_skills[category].get(skill, 0)
-                    )
-    
-    stop_words = set(stopwords.words('english'))
-    words = tokenize_text(text)
-    
-    words = [word for word in words if word not in stop_words]
-    
-    bigrams = [words[i] + ' ' + words[i+1] for i in range(len(words)-1)]
-    trigrams = [words[i] + ' ' + words[i+1] + ' ' + words[i+2] for i in range(len(words)-2)]
-    
-    all_terms = words + bigrams + trigrams
-    term_freq = Counter(all_terms)
-    
-    terms = [term for term, freq in term_freq.most_common(100) 
-             if len(term) > 2 or freq > 2]  # Filter out short, infrequent terms
-    
-    categorized_skills = {k: [skill for skill, conf in v.items() if conf >= 0.8] 
-                         for k, v in categorized_skills.items()}
-    
-    categorized_skills = {k: v for k, v in categorized_skills.items() if v}
-    
-    return terms, categorized_skills
+    except Exception as e:
+        st.error(f"Error in text processing: {str(e)}")
+        return [], {}
 
 def calculate_match_percentage(resume_text, jd_text):
     try:
@@ -237,22 +262,22 @@ def calculate_match_percentage(resume_text, jd_text):
     except Exception as e:
         print(f"Error in calculate_match_percentage: {str(e)}")
         return 50
+
 def extract_pdf_text(uploaded_file):
-    
     reader = pdf.PdfReader(uploaded_file)
     text = ""
     for page in reader.pages:
         text += page.extract_text()
     return text
+
 def analyze_education(text):
     text_lower = text.lower()
-    # Use simple string splitting instead of sent_tokenize
-    sentences = [s.strip() for s in text_lower.split('.') if s.strip()]
-    edu_sentences = [s for s in sentences if any(term in s for term in EDUCATION_TERMS)]
+    
+    sentences = text_lower.split('.')
+    edu_sentences = [s.strip() for s in sentences if any(term in s for term in EDUCATION_TERMS)]
     
     is_cs = any(term in text_lower for term in ['computer science', 'cs', 'information technology', 'it', 'software engineering'])
     
-   
     if edu_sentences:
         main_edu = edu_sentences[0]  # Take the first education-related sentence
     
@@ -267,8 +292,7 @@ def analyze_education(text):
 
 def analyze_experience(text):
     text_lower = text.lower()
-    # Use simple string splitting instead of sent_tokenize
-    sentences = [s.strip() for s in text_lower.split('.') if s.strip()]
+    sentences = [s.strip() for s in text_lower.split('.')]
 
     experiences = {
         'work': [],
@@ -414,8 +438,6 @@ def get_ats_feedback(resume_text, jd_text):
     return json.dumps(response, indent=2)
 
 # Streamlit App Interface
-
-# Display the application header with custom styling
 st.markdown("""
     <div style="text-align: center;">
         <h1 style="color: #1f497d;">Verq ATS Resume Evaluator</h1>
@@ -423,54 +445,40 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-# Add application description
-st.markdown("##  ATS Resume Evaluator")
+st.markdown("## ATS Resume Evaluator")
 st.markdown("Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.")
 
-# Create a two-column layout for inputs
 with st.container():
     col1, col2 = st.columns(2)
 
-    # Left column: Job Description input
     with col1:
-        jd_input = st.text_area(" Job Description", height=300, placeholder="Paste the JD here...")
+        jd_input = st.text_area("Job Description", height=300, placeholder="Paste the JD here...")
 
-    # Right column: Resume upload
     with col2:
-        uploaded_resume = st.file_uploader(" Upload Resume (PDF)", type=["pdf"])
+        uploaded_resume = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
 
-# Evaluate button and results display
-if st.button(" Evaluate"):
-    # Check if both inputs are provided
+if st.button("Evaluate"):
     if uploaded_resume and jd_input.strip():
-        # Show loading spinner while processing
         with st.spinner("Analyzing Resume..."):
             resume_text = extract_pdf_text(uploaded_resume)
             ats_response = get_ats_feedback(resume_text, jd_input)
             
             if ats_response:
                 st.markdown("---")
-                st.markdown("###  ATS Evaluation Results")
+                st.markdown("### ATS Evaluation Results")
         
-        # Convert JSON response to Python dictionary
         results = json.loads(ats_response)
         
-        # Display match percentage with color coding
-        # Green: ≥80%, Orange: ≥60%, Red: <60%
         match_pct = float(results['JD Match'].strip('%'))
         color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
         st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results['JD Match']}</h2>", unsafe_allow_html=True)
         
-        # Create three tabs for organized results display
         tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
         
-        # Tab 1: Overview - Display basic profile information
         with tab1:
-            # Show profile summary
             st.markdown("### Profile Summary")
             st.info(results['Profile Summary'])
             
-            # Display education and experience in two columns
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### Education")
@@ -479,61 +487,48 @@ if st.button(" Evaluate"):
                 st.markdown("### Experience")
                 st.write(results['Experience'])
             
-            # Display projects and achievements if available
             if results['Projects'] or results['Achievements']:
                 st.markdown("### Key Highlights")
                 
-                # Show top 3 projects
                 if results['Projects']:
                     st.markdown("#### Notable Projects")
                     for project in results['Projects']:
                         st.markdown(f"* {project.capitalize()}")
                 
-                # Show top 3 achievements
                 if results['Achievements']:
                     st.markdown("#### Key Achievements")
                     for achievement in results['Achievements']:
                         st.markdown(f"* {achievement.capitalize()}")
         
-        # Tab 2: Skills Analysis - Show detailed skill matching and gaps
         with tab2:
-            # Display skill categories with match percentages
             st.markdown("### Skills by Category")
             for category, match in results['Category Matches'].items():
-                # Create a progress bar layout with 75-25 split
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    # Color code the progress bars based on match percentage
                     progress_color = 'green' if match >= 80 else 'orange' if match >= 60 else 'red'
-                    st.markdown(f"**{category}**")
-                    st.progress(match/100)  # Show progress bar
+                    st.markdown(f"*{category}*")
+                    st.progress(match/100)
                 with col2:
-                    # Display match percentage with color coding
                     st.markdown(f"<h4 style='color: {progress_color}'>{match}%</h4>", unsafe_allow_html=True)
                 
-                # Show missing skills in each category
                 if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
                     st.caption(f"Missing: {', '.join(results['Skill Gaps'][category])}")
             
-            # Display strengths and areas for improvement side by side
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### Key Strengths")
                 for strength in results['Key Strengths']:
-                    st.markdown(f"+ {strength}")  # Use bullet points for strengths
+                    st.markdown(f"+ {strength}")
             with col2:
                 st.markdown("### Areas to Add")
                 for keyword in results['Missing Keywords']:
-                    st.markdown(f"- {keyword}")  # Use minus for missing skills
+                    st.markdown(f"- {keyword}")
         
-        # Tab 3: Recommendations - Provide actionable feedback
         with tab3:
-            # Show personalized recommendations
             st.markdown("### Detailed Recommendations")
             for i, rec in enumerate(results['Recommendations'], 1):
-                st.markdown(f"{i}. {rec}")  # Numbered list of recommendations
+                st.markdown(f"{i}. {rec}")
             
-            # Display general resume improvement tips
             st.markdown("### Pro Tips")
             st.info("""
             - Use industry-standard section headings
@@ -541,6 +536,5 @@ if st.button(" Evaluate"):
             - Highlight achievements with metrics
             - Keep formatting simple and consistent
             """)
-    # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
