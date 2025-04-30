@@ -1,4 +1,29 @@
 import streamlit as st
+import nltk
+import os                  
+import PyPDF2 as pdf      
+import json               
+import re                 
+from collections import Counter  
+from sklearn.feature_extraction.text import TfidfVectorizer  
+from sklearn.metrics.pairwise import cosine_similarity      
+from nltk.tokenize import word_tokenize, sent_tokenize  # For breaking text into words and sentences
+from nltk.corpus import stopwords                       # For removing common words (e.g., 'the', 'is', 'at')
+
+# Download required NLTK data
+nltk_data_packages = [
+    'punkt',
+    'stopwords',
+    'averaged_perceptron_tagger',
+    'maxent_ne_chunker',
+    'words'
+]
+
+for package in nltk_data_packages:
+    try:
+        nltk.data.find(f'tokenizers/{package}' if package == 'punkt' else package)
+    except LookupError:
+        nltk.download(package)
 
 # Configure the Streamlit page settings
 st.set_page_config(
@@ -78,32 +103,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Download required NLTK data
-try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('averaged_perceptron_tagger')
-    nltk.download('maxent_ne_chunker')
-    nltk.download('words')
-
-import nltk
-import os                  
-import PyPDF2 as pdf      
-import json               
-import re                 
-from collections import Counter  
-
-from sklearn.feature_extraction.text import TfidfVectorizer  
-from sklearn.metrics.pairwise import cosine_similarity      
-
-
-from nltk.tokenize import word_tokenize, sent_tokenize  # For breaking text into words and sentences
-from nltk.corpus import stopwords                       # For removing common words (e.g., 'the', 'is', 'at')
-
 
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
@@ -226,6 +225,7 @@ def extract_skills_and_keywords(text):
     categorized_skills = {k: v for k, v in categorized_skills.items() if v}
     
     return terms, categorized_skills
+
 def calculate_match_percentage(resume_text, jd_text):
     try:
         resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
