@@ -21,16 +21,47 @@ import PyPDF2 as pdf
 import json               
 import re                 
 from collections import Counter  
-
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
 
 
-import nltk
-from nltk.tokenize import word_tokenize, sent_tokenize  # For breaking text into words and sentences
-from nltk.corpus import stopwords                       # For removing common words (e.g., 'the', 'is', 'at')
+# Custom text processing functions
+def clean_text(text):
+    """Clean and normalize text"""
+    # Convert to lowercase
+    text = text.lower()
+    # Replace multiple spaces with single space
+    text = re.sub(r'\s+', ' ', text)
+    # Replace newlines with space
+    text = re.sub(r'\n+', ' ', text)
+    return text.strip()
 
+def split_into_sentences(text):
+    """Split text into sentences using regex"""
+    # Clean the text first
+    text = clean_text(text)
+    # Split on sentence boundaries
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    return [s.strip() for s in sentences if s.strip()]
 
+def tokenize_words(text):
+    """Split text into words using regex"""
+    # Clean the text first
+    text = clean_text(text)
+    # Split into words (alphanumeric sequences)
+    words = re.findall(r'\b\w+\b', text.lower())
+    return [w for w in words if w and len(w) > 1]  # Filter out single characters
+
+# Common English stop words
+STOP_WORDS = {'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
+              "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
+              'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 
+              'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
+              'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 
+              'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 
+              'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
+              'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 
+              'under', 'again', 'further', 'then', 'once'}
 
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
@@ -62,16 +93,20 @@ EDUCATION_TERMS = [
 @st.cache_resource
 def download_nltk_data():
     try:
-        nltk.data.find('punkt')
+        # nltk.data.find('punkt')
+        pass
     except LookupError:
-        with st.spinner('Downloading required language data (punkt)...'):
-            nltk.download('punkt')
+        # with st.spinner('Downloading required language data (punkt)...'):
+        #     nltk.download('punkt')
+        pass
     
     try:
-        nltk.data.find('stopwords')
+        # nltk.data.find('stopwords')
+        pass
     except LookupError:
-        with st.spinner('Downloading required language data (stopwords)...'):
-            nltk.download('stopwords')
+        # with st.spinner('Downloading required language data (stopwords)...'):
+        #     nltk.download('stopwords')
+        pass
 
 download_nltk_data()
 
@@ -132,9 +167,9 @@ def extract_skills_and_keywords(text):
                         categorized_skills[category].get(skill, 0)
                     )
     
-    stop_words = set(stopwords.words('english'))
-    words = word_tokenize(text)
-    words = [word.lower() for word in words if word.isalnum() and word.lower() not in stop_words]
+    stop_words = STOP_WORDS
+    words = tokenize_words(text)
+    words = [word for word in words if word.lower() not in stop_words]
     
     bigrams = [' '.join(pair) for pair in zip(words[:-1], words[1:])]
     trigrams = [' '.join(triple) for triple in zip(words[:-2], words[1:-1], words[2:])]
@@ -151,6 +186,7 @@ def extract_skills_and_keywords(text):
     categorized_skills = {k: v for k, v in categorized_skills.items() if v}
     
     return terms, categorized_skills
+
 def calculate_match_percentage(resume_text, jd_text):
     try:
         resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
@@ -182,7 +218,7 @@ def calculate_match_percentage(resume_text, jd_text):
         def preprocess_text(text):
             text = text.lower()
             text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
-            stop_words = set(stopwords.words('english'))
+            stop_words = STOP_WORDS
             words = [w for w in text.split() if w not in stop_words]
             return ' '.join(words)
         
@@ -226,6 +262,7 @@ def calculate_match_percentage(resume_text, jd_text):
     except Exception as e:
         print(f"Error in calculate_match_percentage: {str(e)}")
         return 50
+
 def extract_pdf_text(uploaded_file):
     
     reader = pdf.PdfReader(uploaded_file)
@@ -233,6 +270,7 @@ def extract_pdf_text(uploaded_file):
     for page in reader.pages:
         text += page.extract_text()
     return text
+
 def analyze_education(text):
     text_lower = text.lower()
     
@@ -532,4 +570,3 @@ if st.button(" Evaluate"):
     # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
-
