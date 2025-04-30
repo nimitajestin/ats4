@@ -315,50 +315,67 @@ def generate_recommendations(resume_data, jd_data, matched_skills, skill_gaps):
     return recommendations[:5]  # Return top 5 most relevant recommendations
 
 def extract_resume_sections(text):
-    """Enhanced section extraction with better pattern matching"""
+    """Extract resume sections with comprehensive error handling"""
+    # Initialize default sections
     sections = {
         'Profile Summary': '',
         'Education': '', 
         'Experience': '',
-        'Projects': '',
-        'Achievements': ''
+        'Projects': [],
+        'Achievements': []
     }
     
-    if not text:
+    # Validate input
+    if not text or not isinstance(text, (str, bytes)):
         return sections
+    
+    try:
+        # Ensure we have a string
+        if isinstance(text, bytes):
+            text = text.decode('utf-8', errors='ignore')
+            
+        # Normalize text safely
+        text = str(text)
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        text = re.sub(r'\n{3,}', '\n\n', text)
         
-    # Normalize text for better matching
-    text = text.replace('\r\n', '\n').replace('\r', '\n')
-    
-    # Define section patterns with multiple possible headers
-    patterns = {
-        'Profile Summary': [r'SUMMARY', r'PROFILE', r'ABOUT', r'OBJECTIVE'],
-        'Education': [r'EDUCATION', r'ACADEMICS', r'QUALIFICATIONS'],
-        'Experience': [r'EXPERIENCE', r'WORK HISTORY', r'EMPLOYMENT'],
-        'Projects': [r'PROJECTS', r'KEY PROJECTS', r'NOTABLE PROJECTS'],
-        'Achievements': [r'ACHIEVEMENTS', r'ACCOMPLISHMENTS', r'KEY ACHIEVEMENTS']
-    }
-    
-    current_section = None
-    
-    for line in text.split('\n'):
-        line = line.strip()
-        if not line:
-            continue
-            
-        # Check for section headers
-        for section, section_patterns in patterns.items():
-            if any(re.search(pattern, line, re.IGNORECASE) for pattern in section_patterns):
-                current_section = section
-                break
+        # Section patterns
+        section_patterns = {
+            'Profile Summary': [r'SUMMARY', r'PROFILE', r'ABOUT', r'OBJECTIVE'],
+            'Education': [r'EDUCATION', r'ACADEMIC', r'QUALIFICATION'],
+            'Experience': [r'EXPERIENCE', r'WORK HISTORY', r'EMPLOYMENT'],
+            'Projects': [r'PROJECTS', r'PROJECT EXPERIENCE'],
+            'Achievements': [r'ACHIEVEMENTS', r'ACCOMPLISHMENTS', r'HONORS']
+        }
+        
+        current_section = None
+        
+        for line in text.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
                 
-        # Add content to current section
-        if current_section and line:
-            sections[current_section] += f"{line}\n"
+            # Check for section headers
+            for section, patterns in section_patterns.items():
+                if any(re.search(pattern, line, re.IGNORECASE) for pattern in patterns):
+                    current_section = section
+                    break
             
-    # Clean up sections
-    for section in sections:
-        sections[section] = sections[section].strip()
+            # Add content to current section
+            if current_section:
+                if current_section in ['Projects', 'Achievements']:
+                    if line and line not in sections[current_section]:
+                        sections[current_section].append(line)
+                else:
+                    sections[current_section] += f"{line}\n"
+        
+        # Clean up sections
+        for section in sections:
+            if isinstance(sections[section], str):
+                sections[section] = sections[section].strip()
+        
+    except Exception as e:
+        st.warning(f"Section extraction warning: {str(e)}")
     
     return sections
 
