@@ -209,7 +209,7 @@ def calculate_match_percentage(resume_text, jd_text):
             # Skill category analysis...
             
         return {
-            "JD Match": f"{match_percentage['Technical']}%" if 'match_percentage' in locals() else "0%",
+            "JD Match": match_percentage['Technical'] if 'match_percentage' in locals() else 0,
             "Profile Summary": profile_summary,
             "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
             "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
@@ -359,7 +359,7 @@ def get_ats_feedback(resume_text, jd_text):
             # Skill category analysis...
             
         return {
-            "JD Match": f"{match_percentage['Technical']}%" if 'match_percentage' in locals() else "0%",
+            "JD Match": match_percentage['Technical'] if 'match_percentage' in locals() else 0,
             "Profile Summary": profile_summary,
             "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
             "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
@@ -423,9 +423,9 @@ if st.button(" Evaluate"):
         
         # Display match percentage with color coding
         # Green: ≥80%, Orange: ≥60%, Red: <60%
-        match_pct = float(results.get('JD Match', '0%').strip('%'))
+        match_pct = float(results.get('JD Match', '0'))
         color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results.get('JD Match', 'N/A')}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {results.get('JD Match', 'N/A')}%</h2>", unsafe_allow_html=True)
         
         # Create three tabs for organized results display
         tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
