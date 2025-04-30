@@ -206,34 +206,7 @@ def calculate_match_percentage(resume_text, jd_text):
                     profile_summary += " | "
                 profile_summary += experience
             
-            # Skill category analysis
-            if resume_categories and jd_categories:
-                matched_skills = {category: [] for category in SKILL_CATEGORIES}
-                skill_gaps = {category: [] for category in SKILL_CATEGORIES}
-                
-                for category in SKILL_CATEGORIES:
-                    # Get all skills from JD in this category
-                    jd_skills = set()
-                    for subcategory in SKILL_CATEGORIES[category]['subcategories']:
-                        if subcategory in jd_categories[category]:
-                            jd_skills.update(jd_categories[category][subcategory].keys())
-                    
-                    # Get all skills from resume in this category
-                    resume_skills = set()
-                    for subcategory in SKILL_CATEGORIES[category]['subcategories']:
-                        if subcategory in resume_categories[category]:
-                            resume_skills.update(resume_categories[category][subcategory].keys())
-                    
-                    # Find matches and gaps
-                    matched = jd_skills & resume_skills
-                    gaps = jd_skills - resume_skills
-                    
-                    matched_skills[category] = sorted(matched)
-                    skill_gaps[category] = sorted(gaps)
-                    
-                    # Generate recommendations
-                    if gaps:
-                        recommendations.append(f"Add {category.lower()} skills: {', '.join(list(gaps)[:3])}")
+            # Skill category analysis...
             
         return {
             "JD Match": f"{match_percentage['Technical']}%" if 'match_percentage' in locals() else "0%",
@@ -383,34 +356,7 @@ def get_ats_feedback(resume_text, jd_text):
                     profile_summary += " | "
                 profile_summary += experience
             
-            # Skill category analysis
-            if resume_categories and jd_categories:
-                matched_skills = {category: [] for category in SKILL_CATEGORIES}
-                skill_gaps = {category: [] for category in SKILL_CATEGORIES}
-                
-                for category in SKILL_CATEGORIES:
-                    # Get all skills from JD in this category
-                    jd_skills = set()
-                    for subcategory in SKILL_CATEGORIES[category]['subcategories']:
-                        if subcategory in jd_categories[category]:
-                            jd_skills.update(jd_categories[category][subcategory].keys())
-                    
-                    # Get all skills from resume in this category
-                    resume_skills = set()
-                    for subcategory in SKILL_CATEGORIES[category]['subcategories']:
-                        if subcategory in resume_categories[category]:
-                            resume_skills.update(resume_categories[category][subcategory].keys())
-                    
-                    # Find matches and gaps
-                    matched = jd_skills & resume_skills
-                    gaps = jd_skills - resume_skills
-                    
-                    matched_skills[category] = sorted(matched)
-                    skill_gaps[category] = sorted(gaps)
-                    
-                    # Generate recommendations
-                    if gaps:
-                        recommendations.append(f"Add {category.lower()} skills: {', '.join(list(gaps)[:3])}")
+            # Skill category analysis...
             
         return {
             "JD Match": f"{match_percentage['Technical']}%" if 'match_percentage' in locals() else "0%",
