@@ -1,21 +1,4 @@
 import streamlit as st
-
-# Configure the Streamlit page settings
-st.set_page_config(
-    page_title="Verq ATS Evaluator", 
-    layout="centered",               
-    initial_sidebar_state="expanded"  
-)
-
-st.markdown("""
-<style>
-    .stApp {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 import os                  
 import PyPDF2 as pdf      
 import json               
@@ -24,6 +7,56 @@ from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
 
+import nltk
+from nltk.tokenize import word_tokenize  
+from nltk.corpus import stopwords
+
+# Download required NLTK data
+@st.cache_resource
+def download_nltk_data():
+    """Download required NLTK data"""
+    try:
+        # Create NLTK data directory if it doesn't exist
+        nltk_data_dir = os.path.expanduser('~/nltk_data')
+        if not os.path.exists(nltk_data_dir):
+            os.makedirs(nltk_data_dir)
+        
+        # Download required packages
+        packages = ['punkt', 'stopwords']
+        for package in packages:
+            try:
+                nltk.data.find(f'tokenizers/{package}')
+            except LookupError:
+                with st.spinner(f'Downloading {package}...'):
+                    nltk.download(package, quiet=True)
+        return True
+    except Exception as e:
+        st.error(f'Error downloading NLTK data: {str(e)}')
+        return False
+
+# Initialize NLTK resources
+if not download_nltk_data():
+    st.error('Failed to download required NLTK data. Please try refreshing the page.')
+    st.stop()
+
+# Helper function for text tokenization
+def tokenize_text(text):
+    """Tokenize text using NLTK word_tokenize"""
+    try:
+        return word_tokenize(text.lower())
+    except Exception as e:
+        # Fallback to simple word splitting if NLTK fails
+        return text.lower().split()
+
+# Helper function for sentence splitting
+def split_into_sentences(text):
+    """Split text into sentences using regex"""
+    # Clean up the text first
+    text = re.sub(r'\s+', ' ', text)
+    # Split on common sentence endings
+    sentences = re.split(r'[.!?]+(?=\s|[A-Z]|$)', text)
+    # Clean and filter sentences
+    return [s.strip() for s in sentences if s.strip()]
 
 # Custom text processing functions
 def clean_text(text):
@@ -36,14 +69,6 @@ def clean_text(text):
     text = re.sub(r'\n+', ' ', text)
     return text.strip()
 
-def split_into_sentences(text):
-    """Split text into sentences using regex"""
-    # Clean the text first
-    text = clean_text(text)
-    # Split on sentence boundaries
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-    return [s.strip() for s in sentences if s.strip()]
-
 def tokenize_words(text):
     """Split text into words using regex"""
     # Clean the text first
@@ -51,17 +76,6 @@ def tokenize_words(text):
     # Split into words (alphanumeric sequences)
     words = re.findall(r'\b\w+\b', text.lower())
     return [w for w in words if w and len(w) > 1]  # Filter out single characters
-
-# Common English stop words
-STOP_WORDS = {'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
-              "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
-              'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 
-              'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
-              'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 
-              'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 
-              'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
-              'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 
-              'under', 'again', 'further', 'then', 'once'}
 
 SKILL_CATEGORIES = {
     'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
@@ -90,27 +104,17 @@ EDUCATION_TERMS = [
 ]
 
 
-@st.cache_resource
-def download_nltk_data():
-    try:
-        # nltk.data.find('punkt')
-        pass
-    except LookupError:
-        # with st.spinner('Downloading required language data (punkt)...'):
-        #     nltk.download('punkt')
-        pass
-    
-    try:
-        # nltk.data.find('stopwords')
-        pass
-    except LookupError:
-        # with st.spinner('Downloading required language data (stopwords)...'):
-        #     nltk.download('stopwords')
-        pass
+# Common English stop words
+STOP_WORDS = {'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
+              "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
+              'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 
+              'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
+              'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 
+              'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 
+              'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
+              'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 
+              'under', 'again', 'further', 'then', 'once'}
 
-download_nltk_data()
-
-@st.cache_data
 def extract_skills_and_keywords(text):
     text = text.lower()
     text = re.sub(r'\s+', ' ', text)
