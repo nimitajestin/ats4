@@ -452,44 +452,12 @@ if st.button(" Evaluate"):
             st.markdown("### Skills Analysis")
             
             # Enhanced skill categories display
-            if 'Category Matches' in results:
-                for category in ['Technical', 'Soft', 'Domain']:
-                    match_pct = results['Category Matches'].get(category, 0)
-                    progress_color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-                    
-                    # Create expandable section for each category
-                    with st.expander(f"{category} Skills - {match_pct}% Match", expanded=True):
-                        # Progress bar with match details
-                        st.progress(match_pct/100)
-                        
-                        # Show matched skills if available
-                        if 'Matched Skills' in results and category in results['Matched Skills']:
-                            st.markdown(f"**Your strong {category.lower()} skills:**")
-                            cols = st.columns(3)
-                            for i, skill in enumerate(results['Matched Skills'][category][:6]):
-                                cols[i%3].success(f" {skill}")
-                        
-                        # Show missing skills if available
-                        if 'Skill Gaps' in results and category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                            st.markdown(f"**Recommended {category.lower()} skills to add:**")
-                            for skill in results['Skill Gaps'][category][:5]:
-                                st.error(f"- {skill}")
-            
-            # Strengths vs Areas to Improve
-            st.markdown("### Strengths vs Areas for Improvement")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("#### Your Key Strengths")
-                for strength in results.get('Key Strengths', [])[:5]:
-                    st.success(f" {strength}")
-            with col2:
-                st.markdown("#### Priority Areas")
-                for keyword in results.get('Missing Keywords', [])[:5]:
-                    st.error(f" {keyword}")
-        
-        # Tab 3: Recommendations - Enhanced actionable feedback
-        with tab3:
-            st.markdown("### Personalized Recommendations")
+            oorrcategory,,sooren results['['Core > 0:Mates].ies()
+                if 'scoe > >: 60 else 'red'
+                    wn(f"<span style='csroreor}'>{category} - {scoresMore/span>", unsafe_allow_html=True)
+                elseo}.mclkdo<  vye='von:{Kr}'>hs', [])["-{{se}% </pn>",#An"ae_a(f_ht =Tru)
+
+# Tab 3: Recommendations - Enhanceeedback-Nmtchgrfzundtions")
             
             # Resume Structure Recommendations
             with st.expander("Resume Structure", expanded=True):
