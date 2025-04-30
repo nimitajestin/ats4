@@ -132,76 +132,48 @@ def calculate_match_percentage(resume_text, jd_text):
         resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
         jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
         
-        tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'DevOps', 'Data Science']
-        tech_scores = []
+        # Calculate category matches
+        category_scores = {}
         
-        for category in tech_categories:
-            if category in jd_categories and jd_categories[category]:
-                jd_skills = set(jd_categories[category])
-                resume_skills = set(resume_categories.get(category, []))
+        for category in SKILL_CATEGORIES:
+            jd_skills = jd_categories.get(category, {})
+            resume_skills = resume_categories.get(category, {})
+            
+            if not jd_skills:  # Skip if JD doesn't require this category
+                continue
                 
-                exact_matches = len(jd_skills & resume_skills)
-                partial_matches = sum(1 for js in jd_skills for rs in resume_skills 
-                                    if js in rs or rs in js)
-                
-                match_score = (exact_matches + 0.5 * partial_matches) / len(jd_skills)
-                tech_scores.append(match_score)
+            # Calculate match percentage for this category
+            matched_score = sum(
+                min(jd_skills[skill], resume_skills[skill]) 
+                for skill in jd_skills if skill in resume_skills
+            )
+            
+            total_score = sum(jd_skills.values())
+            
+            if total_score > 0:
+                match_percent = (matched_score / total_score) * 100
+                category_scores[category] = round(match_percent, 1)
         
-        tech_similarity = sum(tech_scores) / len(tech_scores) if tech_scores else 0.5
-        
-        soft_skills_score = 0.0
-        if 'Soft Skills' in jd_categories and jd_categories['Soft Skills']:
-            jd_soft_skills = set(jd_categories['Soft Skills'])
-            resume_soft_skills = set(resume_categories.get('Soft Skills', []))
-            soft_skills_score = len(jd_soft_skills & resume_soft_skills) / len(jd_soft_skills)
-        
-        def preprocess_text(text):
-            text = text.lower()
-            text = re.sub(r'[^a-z0-9\s]', ' ', text)
-            stop_words = STOP_WORDS
-            words = [w for w in text.split() if w not in stop_words]
-            return ' '.join(words)
-        
-        processed_resume = preprocess_text(resume_text)
-        processed_jd = preprocess_text(jd_text)
-        
-        vectorizer = TfidfVectorizer(ngram_range=(1, 2))
-        tfidf_matrix = vectorizer.fit_transform([processed_resume, processed_jd])
-        keyword_similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        
-        exp_edu_score = 0.0
-        education = analyze_education(resume_text)
-        experience = analyze_experience(resume_text)
-        
-        if education and any(term in education.lower() for term in ['computer science', 'it', 'software', 'engineering']):
-            exp_edu_score += 0.5
-     
-        if experience:
-            exp_words = experience.lower()
- 
-            years_pattern = r'\b\d+\s*(?:\+\s*)?years?\b'
-            if re.search(years_pattern, exp_words):
-                exp_edu_score += 0.5
-   
-        final_score = (
-            0.45 * tech_similarity +
-            0.15 * soft_skills_score +
-            0.25 * keyword_similarity +
-            0.15 * exp_edu_score
+        # Calculate overall score (weighted average)
+        if not category_scores:
+            return {'score': 0, 'category_scores': {}}
+            
+        overall_score = sum(
+            score * SKILL_CATEGORIES[category]['weight'] 
+            for category, score in category_scores.items()
+        ) / sum(
+            SKILL_CATEGORIES[category]['weight'] 
+            for category in category_scores
         )
         
-        if final_score > 0.6:
-            final_score = 0.6 + (final_score - 0.6) * 1.5
-        elif final_score < 0.4:
-            final_score = 0.4 * (final_score / 0.4)
-
-        final_score = max(0, min(1, final_score))
-        
-        return round(final_score * 100, 1)
+        return {
+            'score': round(overall_score, 1),
+            'category_scores': category_scores
+        }
         
     except Exception as e:
         print(f"Error in calculate_match_percentage: {str(e)}")
-        return 50
+        return {'score': 0, 'category_scores': {}}
 
 def extract_pdf_text(uploaded_file):
     
@@ -373,7 +345,7 @@ def get_ats_feedback(resume_text, jd_text):
             # Skill category analysis...
             
         return {
-            "JD Match": f"{match_percentage}%" if 'match_percentage' in locals() else "0%",
+            "JD Match": f"{match_percentage['score']}%" if 'match_percentage' in locals() else "0%",
             "Profile Summary": profile_summary,
             "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
             "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
@@ -381,7 +353,7 @@ def get_ats_feedback(resume_text, jd_text):
             "Experience": analyze_experience(resume_text) if 'resume_text' in locals() else "No experience details found",
             "Projects": analyze_projects(resume_text)[:3] if 'resume_text' in locals() and analyze_projects(resume_text) else [],
             "Achievements": analyze_achievements(resume_text)[:3] if 'resume_text' in locals() and analyze_achievements(resume_text) else [],
-            "Category Matches": category_scores,
+            "Category Matches": match_percentage['category_scores'],
             "Skill Gaps": skill_gaps,
             "Matched Skills": matched_skills,
             "Recommendations": generate_recommendations({"Projects": analyze_projects(resume_text), "Achievements": analyze_achievements(resume_text)}, jd_text, matched_skills, skill_gaps)
