@@ -46,44 +46,78 @@ STOP_WORDS = {
     'under', 'again', 'further', 'then', 'once'
 }
 
-# Domain-focused skill categories
+# Enhanced domain-focused skill categories
 DOMAIN_CATEGORIES = {
-    'Technical Skills': {
-        'weight': 1.5,
-        'skills': ['python', 'java', 'sql', 'aws', 'docker', 'react', 'django']
-    },
-    'Domain Knowledge': {
+    'Core Technical': {
         'weight': 1.3,
-        'skills': ['finance', 'healthcare', 'ecommerce', 'banking', 'ai', 'machine learning']
+        'skills': ['python', 'java', 'sql', 'aws', 'docker', 'react', 'django'],
+        'context_boosters': ['built', 'developed', 'implemented', 'optimized']
     },
-    'Soft Skills': {
-        'weight': 1.0,
-        'skills': ['communication', 'leadership', 'teamwork', 'problem solving']
+    'Industry Expertise': {
+        'weight': 1.7,  # Highest weight for domain knowledge
+        'skills': [
+            # Tech
+            'cloud architecture', 'devops', 'microservices', 'api design',
+            # Finance
+            'financial modeling', 'risk management', 'investment analysis',
+            # Healthcare
+            'health informatics', 'fda compliance', 'clinical systems',
+            # Product
+            'agile development', 'user research', 'product strategy'
+        ],
+        'context_boosters': ['led', 'managed', 'spearheaded', 'transformed']
+    },
+    'Applied Skills': {
+        'weight': 1.4,
+        'skills': [
+            'data analysis', 'machine learning', 'process automation',
+            'system design', 'performance optimization', 'security compliance'
+        ],
+        'context_boosters': ['analyzed', 'improved', 'secured', 'scaled']
+    },
+    'Leadership': {
+        'weight': 1.2,
+        'skills': [
+            'team leadership', 'stakeholder management',
+            'strategic planning', 'cross-functional collaboration'
+        ],
+        'context_boosters': ['led', 'mentored', 'aligned', 'drove']
     }
 }
 
 def extract_skills_and_keywords(text):
-    """Domain-optimized skill extraction without database dependencies"""
+    """Advanced skill extraction with contextual scoring"""
     text = text.lower()
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)  # Better normalization
     
-    categorized_skills = {category: {} for category in DOMAIN_CATEGORIES}
+    skills_data = {category: {'skills': {}, 'context_count': 0} 
+                  for category in DOMAIN_CATEGORIES}
     
-    # Single efficient pass with domain focus
+    # Multi-pass analysis for better accuracy
     for category, data in DOMAIN_CATEGORIES.items():
         pattern = re.compile(r'\b(' + '|'.join(map(re.escape, data['skills'])) + r')\b')
         
         for match in pattern.finditer(text):
             skill = match.group()
+            context = text[max(0, match.start()-100):min(len(text), match.end()+100)]
             
-            # Simple presence-based scoring (domain-focused doesn't need complex scoring)
-            categorized_skills[category][skill] = 1.0  # Full score for domain-relevant skills
+            # Contextual scoring
+            base_score = 0.7
+            if any(boost in context for boost in data['context_boosters']):
+                base_score = min(1.0, base_score + 0.3)
+            
+            # Multiple mentions boost
+            if skill in skills_data[category]['skills']:
+                base_score = min(1.0, skills_data[category]['skills'][skill] + 0.15)
+            
+            skills_data[category]['skills'][skill] = base_score
+            skills_data[category]['context_count'] += 1
     
-    # Lightweight keyword extraction
-    words = [word for word in re.findall(r'\b\w{4,}\b', text) 
-             if word not in STOP_WORDS]
+    # Extract meaningful keywords (4+ chars, not stopwords)
+    keywords = [word for word in re.findall(r'\b\w{4,}\b', text) 
+               if word not in STOP_WORDS and not word.isdigit()]
     
-    return words, categorized_skills
+    return keywords, {cat: data['skills'] for cat, data in skills_data.items()}
 
 def calculate_match_percentage(resume_text, jd_text):
     try:
@@ -145,14 +179,7 @@ def analyze_education(text):
     text_lower = text.lower()
     
     sentences = text_lower.split('.')
-    edu_sentences = [s.strip() for s in sentences if any(term in s for term in ['bachelor', 'master', 'phd', 'degree', 
-    'b.tech', 'b.e', 'm.tech', 'bsc', 'msc',
-    'computer science', 'cs', 'information technology', 'it',
-    'engineering', 'technology', 'computer engineering',
-    'software engineering', 'information systems',
-    'artificial intelligence', 'data science',
-    'university', 'college', 'institute',
-    'gpa', 'cgpa', 'grade', 'honors', 'distinction'])]
+    edu_sentences = [s.strip() for s in sentences if any(term in s for term in ['bachelor', 'master', 'phd', 'degree', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc', 'computer science', 'cs', 'information technology', 'it', 'engineering', 'technology', 'computer engineering', 'software engineering', 'information systems', 'artificial intelligence', 'data science', 'university', 'college', 'institute', 'gpa', 'cgpa', 'grade', 'honors', 'distinction'])]
     
     is_cs = any(term in text_lower for term in ['computer science', 'cs', 'information technology', 'it', 'software engineering'])
     
@@ -237,11 +264,17 @@ def generate_recommendations(resume_data, jd_data, matched_skills, skill_gaps):
     # 1. Skill development recommendations
     for category, gaps in skill_gaps.items():
         if gaps:
-            if category in ['Technical Skills', 'Domain Knowledge']:
+            if category in ['Core Technical', 'Applied Skills']:
                 rec = f"Develop {category.lower()} skills: Consider learning {gaps[0]} through online courses " \
                       f"or projects. Resources: " \
                       f"{'Udemy' if 'python' in gaps[0].lower() else 'Codecademy' if 'javascript' in gaps[0].lower() else 'Coursera'}"
-            elif category == 'Soft Skills':
+            elif category == 'Industry Expertise':
+                rec = f"Gain {gaps[0]} experience: Try building a small project using {gaps[0]} " \
+                      f"with a frontend framework you know."
+            elif category == 'Leadership':
+                rec = f"Learn {gaps[0]}: Set up a CI/CD pipeline or containerize an existing project " \
+                      f"to gain hands-on experience."
+            else:
                 rec = f"Improve {category.lower()} skills: Focus on developing {gaps[0]}"
             recommendations.append(rec)
     
