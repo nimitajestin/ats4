@@ -46,18 +46,32 @@ STOP_WORDS = {
     'under', 'again', 'further', 'then', 'once'
 }
 
+# Enhanced skill categories with weighted importance
 SKILL_CATEGORIES = {
-    'Programming Languages': ['python', 'java', 'javascript', 'js', 'typescript', 'ts', 'c++', 'c#', 'csharp', 'ruby', 'php', 'swift', 'kotlin', 'go', 'rust', 'scala', 'r', 'matlab', 'c', 'cpp'],
-    
-    'Web Technologies': ['html', 'html5', 'css', 'css3', 'react', 'reactjs', 'angular', 'vue', 'nodejs', 'node.js', 'django', 'flask', 'express', 'jquery', 'bootstrap', 'sass', 'less', 'webpack', 'vite', 'nextjs', 'graphql', 'rest api', 'restful'],
-    
-    'Database': ['sql', 'mysql', 'postgresql', 'postgres', 'mongodb', 'mongo', 'oracle', 'redis', 'elasticsearch', 'dynamodb', 'firebase', 'cassandra', 'mariadb', 'sqlite', 'nosql'],
-    
-    'Cloud & DevOps': ['aws', 'amazon', 'azure', 'microsoft azure', 'gcp', 'google cloud', 'docker', 'kubernetes', 'k8s', 'jenkins', 'terraform', 'ci/cd', 'cicd', 'git', 'github', 'gitlab', 'bitbucket', 'linux', 'unix', 'bash', 'shell'],
-     
-    'Data Science': ['machine learning', 'ml', 'deep learning', 'dl', 'nlp', 'natural language processing', 'pandas', 'numpy', 'scipy', 'scikit-learn', 'sklearn', 'tensorflow', 'pytorch', 'keras', 'computer vision', 'cv', 'ai', 'artificial intelligence', 'data mining', 'statistics'],
-    
-    'Soft Skills': ['leadership', 'communication', 'teamwork', 'team player', 'problem solving', 'analytical', 'project management', 'agile', 'scrum', 'time management', 'collaboration', 'critical thinking', 'attention to detail', 'multitasking']
+    'Programming Languages': {
+        'weight': 1.5,
+        'skills': ['python', 'java', 'javascript', 'c++', 'go', 'rust']
+    },
+    'Web Technologies': {
+        'weight': 1.3,
+        'skills': ['react', 'django', 'spring', 'node.js', 'flask']
+    },
+    'Database': {
+        'weight': 1.2,
+        'skills': ['sql', 'mongodb', 'postgresql', 'redis']
+    },
+    'DevOps': {
+        'weight': 1.4,
+        'skills': ['docker', 'kubernetes', 'aws', 'azure', 'ci/cd']
+    },
+    'Data Science': {
+        'weight': 1.3,
+        'skills': ['machine learning', 'deep learning', 'nlp', 'pandas', 'tensorflow']
+    },
+    'Soft Skills': {
+        'weight': 0.8,
+        'skills': ['leadership', 'communication', 'teamwork', 'problem solving']
+    }
 }
 
 EDUCATION_TERMS = [
@@ -78,82 +92,37 @@ def extract_skills_and_keywords(text):
     
     categorized_skills = {category: {} for category in SKILL_CATEGORIES}
     
-    def find_skill_variations(skill):
-        variations = [skill]
-        skill_variations = {
-            'js': 'javascript',
-            'ts': 'typescript',
-            'py': 'python',
-            'cpp': 'c++',
-            'react': 'reactjs',
-            'vue': 'vuejs',
-            'node': 'nodejs',
-            'aws': 'amazon web services',
-            'ml': 'machine learning',
-            'ai': 'artificial intelligence',
-            'dl': 'deep learning',
-            'nlp': 'natural language processing',
-            'db': 'database',
-            'ui': 'user interface',
-            'ux': 'user experience',
-            'api': 'application programming interface'
-        }
-        if skill in skill_variations:
-            variations.append(skill_variations[skill])
-        for abbr, full in skill_variations.items():
-            if skill == full:
-                variations.append(abbr)
-        return variations
-    
-    for category, skills in SKILL_CATEGORIES.items():
-        for skill in skills:
-            variations = find_skill_variations(skill)
-            for variation in variations:
-                pattern = r'\b' + re.escape(variation) + r'\b'
-                matches = re.finditer(pattern, text)
-                for match in matches:
-                    context_start = max(0, match.start() - 50)
-                    context_end = min(len(text), match.end() + 50)
-                    context = text[context_start:context_end]
+    for category, data in SKILL_CATEGORIES.items():
+        for skill in data['skills']:
+            # Find skill mentions with context
+            matches = re.finditer(r'\b' + re.escape(skill) + r'\b', text)
+            for match in matches:
+                context_start = max(0, match.start() - 30)
+                context_end = min(len(text), match.end() + 30)
+                context = text[context_start:context_end]
+                
+                # Score based on context
+                score = 0.7  # base score
+                if any(word in context for word in ['experience', 'proficient', 'expert']):
+                    score = 1.0
+                elif any(word in context for word in ['knowledge', 'familiar']):
+                    score = 0.5
                     
-                    confidence = 0.8  # Base confidence
-                    tech_indicators = ['developed', 'implemented', 'built', 'created', 'designed', 'managed', 'led']
-                    if any(indicator in context for indicator in tech_indicators):
-                        confidence = 0.9
-                    if any(tech in context for tech in ['project', 'application', 'system', 'software']):
-                        confidence = 1.0
-                    
-                    categorized_skills[category][skill] = max(
-                        confidence,
-                        categorized_skills[category].get(skill, 0)
-                    )
+                categorized_skills[category][skill] = max(score, categorized_skills[category].get(skill, 0))
     
+    # Extract keywords
     stop_words = STOP_WORDS
     words = tokenize_text(text)
-    words = [word for word in words if word.lower() not in stop_words]
+    keywords = [word for word in words if word not in stop_words]
     
-    bigrams = [' '.join(pair) for pair in zip(words[:-1], words[1:])]
-    trigrams = [' '.join(triple) for triple in zip(words[:-2], words[1:-1], words[2:])]
-    
-    all_terms = words + bigrams + trigrams
-    term_freq = Counter(all_terms)
-    
-    terms = [term for term, freq in term_freq.most_common(100) 
-             if len(term) > 2 or freq > 2]  # Filter out short, infrequent terms
-    
-    categorized_skills = {k: [skill for skill, conf in v.items() if conf >= 0.8] 
-                         for k, v in categorized_skills.items()}
-    
-    categorized_skills = {k: v for k, v in categorized_skills.items() if v}
-    
-    return terms, categorized_skills
+    return keywords, categorized_skills
 
 def calculate_match_percentage(resume_text, jd_text):
     try:
         resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
         jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
         
-        tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'Cloud & DevOps', 'Data Science']
+        tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'DevOps', 'Data Science']
         tech_scores = []
         
         for category in tech_categories:
