@@ -173,13 +173,11 @@ def extract_text_from_pdf(uploaded_file):
     try:
         reader = PyPDF2.PdfReader(uploaded_file)
         for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                page_text = re.sub(r'\s+', ' ', page_text)
-                text += page_text + '\n\n'
+            text += page.extract_text() + '\n'
+        return extract_resume_sections(text)
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-    return text.strip()
+        return None
 
 def preprocess_text(text):
     """Enhanced text preprocessing for better analysis"""
@@ -315,6 +313,49 @@ def generate_recommendations(resume_data, jd_data, matched_skills, skill_gaps):
         recommendations.append("Highlight achievements: Quantify your impact (e.g. 'Improved performance by X%')")
     
     return recommendations[:5]  # Return top 5 most relevant recommendations
+
+def extract_resume_sections(text):
+    """Precisely extract resume sections with content validation"""
+    sections = {
+        'profile': '',
+        'experience': '', 
+        'education': '',
+        'projects': '',
+        'achievements': ''
+    }
+    
+    # Enhanced section patterns with content validation
+    section_patterns = {
+        'profile': (r'(summary|profile|about|objective)\b', r'(?s)(.*?)(?=\n\s*(experience|education|projects|achievements|skills|$))'),
+        'experience': (r'(experience|work history|employment)\b', r'(?s)(.*?)(?=\n\s*(education|projects|achievements|skills|$))'),
+        'education': (r'(education|academics|qualifications)\b', r'(?s)(.*?)(?=\n\s*(projects|achievements|skills|experience|$))'),
+        'projects': (r'(projects|key projects|notable projects)\b', r'(?s)(.*?)(?=\n\s*(achievements|skills|education|$))'),
+        'achievements': (r'(achievements|accomplishments|key achievements)\b', r'(?s)(.*?)(?=\n\s*(skills|education|projects|$))')
+    }
+    
+    current_section = None
+    lines = text.split('\n')
+    
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Check for section headers
+        for section, (header_pattern, _) in section_patterns.items():
+            if re.search(header_pattern, line, re.I):
+                current_section = section
+                break
+                
+        # Add validated content to current section
+        if current_section:
+            _, content_pattern = section_patterns[current_section]
+            content_match = re.search(content_pattern, '\n'.join(lines[i:]), re.I)
+            if content_match:
+                sections[current_section] = content_match.group(1).strip()
+                break
+                
+    return sections
 
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
