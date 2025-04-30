@@ -451,13 +451,29 @@ if st.button(" Evaluate"):
         with tab2:
             st.markdown("### Skills Analysis")
             
-            # Enhanced skill categories display
-            oorrcategory,,sooren results['['Core > 0:Mates].ies()
-                if 'scoe > >: 60 else 'red'
-                    wn(f"<span style='csroreor}'>{category} - {scoresMore/span>", unsafe_allow_html=True)
-                elseo}.mclkdo<  vye='von:{Kr}'>hs', [])["-{{se}% </pn>",#An"ae_a(f_ht =Tru)
-
-# Tab 3: Recommendations - Enhanceeedback-Nmtchgrfzundtions")
+            for category, score in results['Category Matches'].items():
+                if score > 0:
+                    color = 'green' if score >= 80 else 'orange' if score >= 60 else 'red'
+                    st.markdown(f"<span style='color:{color}'>{category} - {score}% Match</span>", unsafe_allow_html=True)
+                    
+                    # Show matched skills
+                    if category in results.get('Matched Skills', {}):
+                        st.markdown(f"**Your strong {category.lower()} skills:**")
+                        cols = st.columns(3)
+                        for i, skill in enumerate(results['Matched Skills'][category][:6]):
+                            cols[i%3].success(f"✓ {skill}")
+                    
+                    # Show skill gaps
+                    if category in results.get('Skill Gaps', {}) and results['Skill Gaps'][category]:
+                        st.markdown(f"**Recommended {category.lower()} skills to add:**")
+                        for skill in results['Skill Gaps'][category][:3]:
+                            st.error(f"- {skill}")
+                else:
+                    st.markdown(f"{category} - No matching skills found")
+        
+        # Tab 3: Recommendations - Enhanced feedback and suggestions
+        with tab3:
+            st.markdown("### Recommendations")
             
             # Resume Structure Recommendations
             with st.expander("Resume Structure", expanded=True):
