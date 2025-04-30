@@ -22,17 +22,14 @@ from nltk.corpus import stopwords
 @st.cache_resource
 def download_nltk_data():
     try:
-        # Download punkt and punkt_tab
+        # Download punkt tokenizer
         try:
             nltk.data.find('tokenizers/punkt')
-            nltk.data.find('tokenizers/punkt_tab')
         except LookupError:
-            with st.spinner('Downloading tokenizers...'):
+            with st.spinner('Downloading punkt tokenizer...'):
                 nltk.download('punkt', quiet=True)
-                nltk.download('punkt_tab', quiet=True)
-                # Verify downloads
+                # Verify download
                 nltk.data.find('tokenizers/punkt')
-                nltk.data.find('tokenizers/punkt_tab')
         
         # Then try to find stopwords
         try:
