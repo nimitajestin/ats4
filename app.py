@@ -516,24 +516,26 @@ if st.button(" Evaluate"):
         # Combine with extracted sections
         results.update(resume_sections)
         
-        # Directly calculate and display match percentage without variables
+        # Safe match percentage calculation
+        def get_match_pct(results):
+            try:
+                if isinstance(results.get('Match Percentage'), (int, float)):
+                    return max(0, min(100, float(results['Match Percentage'])))
+                if 'JD Match' in results:
+                    return max(0, min(100, float(str(results['JD Match']).replace('%',''))))
+                return 0
+            except:
+                return 0
+        
+        # Display results
+        match_pct = get_match_pct(results)
+        color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
         st.markdown(
-            f"<h2 style='color: {'green' if max(0, min(100, float(
-                str(results.get('Match Percentage', 0)) if isinstance(results.get('Match Percentage'), (int, float, str)) and str(results.get('Match Percentage', 0)).replace('.','').isdigit()
-                else str(results.get('JD Match', '0%')).replace('%','') if 'JD Match' in results
-                else '0'
-            ))) >= 80 else 'orange' if max(0, min(100, float(
-                str(results.get('Match Percentage', 0)) if isinstance(results.get('Match Percentage'), (int, float, str)) and str(results.get('Match Percentage', 0)).replace('.','').isdigit()
-                else str(results.get('JD Match', '0%')).replace('%','') if 'JD Match' in results
-                else '0'
-            ))) >= 60 else 'red'}; text-align: center;'>"
-            f"Overall Match: {max(0, min(100, float(
-                str(results.get('Match Percentage', 0)) if isinstance(results.get('Match Percentage'), (int, float, str)) and str(results.get('Match Percentage', 0)).replace('.','').isdigit()
-                else str(results.get('JD Match', '0%')).replace('%','') if 'JD Match' in results
-                else '0'
-            ))):.1f}%</h2>", 
+            f"<h2 style='color: {color}; text-align: center;'>"
+            f"Overall Match: {match_pct:.1f}%</h2>", 
             unsafe_allow_html=True
         )
+        results['Match Percentage'] = match_pct
         
         # Create three tabs for organized results display
         tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
