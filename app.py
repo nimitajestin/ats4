@@ -95,3 +95,25 @@ def display_enhanced_results(results):
                 if category in results.get('Skill Gaps', {}):
                     st.markdown(f"**Missing {category} Skills:**")
                     st.write(", ".join(results['Skill Gaps'][category]))
+
+# Check if both inputs are provided
+if uploaded_resume and jd_input.strip():
+    # Show loading spinner while processing
+    with st.spinner("Analyzing Resume..."):
+        resume_text = extract_pdf_text(uploaded_resume)
+        ats_response = get_ats_feedback(resume_text, jd_input)
+        
+        if ats_response:
+            st.markdown("---")
+            st.markdown("###  ATS Evaluation Results")
+            
+            # Handle case where response is already parsed or needs parsing
+            if isinstance(ats_response, str):
+                results = json.loads(ats_response)
+            else:
+                results = ats_response
+            
+            # Display results using enhanced visualization
+            display_enhanced_results(results)
+else:
+    st.warning("Please upload a resume and enter a job description.")
