@@ -317,142 +317,54 @@ def analyze_achievements(text):
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
     try:
-        # Define skill categories and their subcategories
-        SKILL_CATEGORIES = {
-            'Technical': ['Programming', 'Tools', 'Frameworks', 'Databases', 'DevOps'],
-            'Domain': ['Industry', 'Regulatory', 'Methodologies', 'Standards'],
-            'Soft': ['Communication', 'Leadership', 'Teamwork', 'Problem Solving']
-        }
-        
-        # Enhanced keyword extraction with category mapping
-        resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
-        jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
-        
-        # Calculate weighted scores for each main category
+        # Initialize all variables with defaults
+        profile_summary = ""
+        matched_keywords = []
+        missing_keywords = []
         category_scores = {}
-        matched_skills = {}
         skill_gaps = {}
-        
-        for main_category, subcategories in SKILL_CATEGORIES.items():
-            # Calculate category weight (Technical > Domain > Soft)
-            weight = 1.5 if main_category == 'Technical' else 1.2 if main_category == 'Domain' else 0.8
-            
-            # Aggregate all skills in this category
-            jd_skills = set()
-            resume_skills = set()
-            
-            for subcat in subcategories:
-                jd_skills.update(jd_categories.get(subcat, []))
-                resume_skills.update(resume_categories.get(subcat, []))
-            
-            # Calculate matches and gaps
-            matched = list(jd_skills & resume_skills)
-            gaps = list(jd_skills - resume_skills)
-            
-            # Store top matches and gaps
-            matched_skills[main_category] = sorted(matched, 
-                key=lambda x: jd_keywords.count(x), reverse=True)[:8]
-            skill_gaps[main_category] = sorted(gaps, 
-                key=lambda x: jd_keywords.count(x), reverse=True)[:5]
-            
-            # Calculate weighted score
-            if jd_skills:
-                base_score = len(matched) / len(jd_skills) * 100
-            else:
-                base_score = min(len(resume_skills) * 5, 30)  # Bonus for extra skills
-                
-            category_scores[main_category] = min(round(base_score * weight, 1), 100)
-        
-        # Calculate overall match percentage
-        total_score = sum(category_scores.values())
-        max_possible = sum(
-            1.5 if cat == 'Technical' else 
-            1.2 if cat == 'Domain' else 
-            0.8 for cat in SKILL_CATEGORIES
-        ) * 100
-        match_percentage = round((total_score / max_possible) * 100, 1)
-        
-        # Generate category-specific recommendations
-        recommendations = []
-        for category in SKILL_CATEGORIES:
-            score = category_scores[category]
-            gaps = skill_gaps[category]
-            
-            if score < 40:
-                rec = f"Urgently improve {category} skills"
-                if gaps:
-                    rec += f" - focus on: {', '.join(gaps[:3])}"
-                recommendations.append(rec)
-            elif score < 70:
-                rec = f"Strengthen {category} skills"
-                if gaps:
-                    rec += f" - consider adding: {', '.join(gaps[:2])}"
-                recommendations.append(rec)
-        
-        # Enhanced recommendation engine
+        matched_skills = {}
         recommendations = []
         
-        # 1. Overall match quality
-        if match_percentage < 40:
-            recommendations.append(" Major Improvement Needed: Your resume shows significant gaps compared to the job requirements")
-        elif match_percentage < 65:
-            recommendations.append(" Moderate Improvement Needed: Several key areas need enhancement")
-        elif match_percentage < 85:
-            recommendations.append(" Minor Improvements: Your resume is good but could be stronger")
-        else:
-            recommendations.append(" Strong Match: Your resume aligns well with the job requirements")
-        
-        # 2. Category-specific recommendations
-        for category in SKILL_CATEGORIES:
-            score = category_scores[category]
-            gaps = skill_gaps[category]
+        # Perform analysis only if inputs exist
+        if resume_text and jd_text:
+            resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
+            jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
             
-            if score < 50:
-                rec = f" Focus on {category} skills: "
-                if gaps:
-                    rec += f"Add {', '.join(gaps[:3])}"
-                else:
-                    rec += f"Highlight your {category.lower()} skills more prominently"
-                recommendations.append(rec)
+            # Calculate keyword matches
+            matched_keywords = [(kw, jd_keywords.count(kw)) 
+                              for kw in set(jd_keywords) if kw in resume_keywords]
+            missing_keywords = [(kw, jd_keywords.count(kw)) 
+                              for kw in set(jd_keywords) if kw not in resume_keywords]
             
-        # 3. Content completeness checks
-        sections_missing = []
-        if not analyze_education(resume_text):
-            sections_missing.append("education")
-        if not analyze_experience(resume_text):
-            sections_missing.append("work experience")
-        if sections_missing:
-            recommendations.append(f"Add missing sections: {', '.join(sections_missing)}")
-        
-        # 4. Impactful writing suggestions
-        if len(analyze_achievements(resume_text)) < 2:
-            recommendations.append("Add more achievements with quantifiable results (e.g., 'Increased sales by 30%')")
-        
-        # 5. Skill demonstration
-        projects = analyze_projects(resume_text)
-        if not projects:
-            recommendations.append("Add projects demonstrating your technical skills")
-        elif len(projects) < 2:
-            recommendations.append("Include more projects that showcase relevant skills")
-        
-        education = analyze_education(resume_text)
-        experience = analyze_experience(resume_text)
-        if education:
-            profile_summary = education.strip().capitalize()
-        if experience:
-            if profile_summary:
-                profile_summary += " | "
-            profile_summary += experience
-        
+            # Sort by frequency in JD (importance)
+            matched_keywords.sort(key=lambda x: x[1], reverse=True)
+            missing_keywords.sort(key=lambda x: x[1], reverse=True)
+            
+            # Rest of your analysis code...
+            match_percentage = calculate_match_percentage(resume_text, jd_text)
+            
+            education = analyze_education(resume_text)
+            experience = analyze_experience(resume_text)
+            
+            if education:
+                profile_summary = education.strip().capitalize()
+            if experience:
+                if profile_summary:
+                    profile_summary += " | "
+                profile_summary += experience
+            
+            # Skill category analysis...
+            
         return {
-            "JD Match": f"{match_percentage}%",
+            "JD Match": f"{match_percentage}%" if 'match_percentage' in locals() else "0%",
             "Profile Summary": profile_summary,
             "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
             "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
-            "Education": analyze_education(resume_text) or "No education details found",
-            "Experience": analyze_experience(resume_text) or "No experience details found",
-            "Projects": analyze_projects(resume_text)[:3] if analyze_projects(resume_text) else [],
-            "Achievements": analyze_achievements(resume_text)[:3] if analyze_achievements(resume_text) else [],
+            "Education": analyze_education(resume_text) if 'resume_text' in locals() else "No education details found",
+            "Experience": analyze_experience(resume_text) if 'resume_text' in locals() else "No experience details found",
+            "Projects": analyze_projects(resume_text)[:3] if 'resume_text' in locals() and analyze_projects(resume_text) else [],
+            "Achievements": analyze_achievements(resume_text)[:3] if 'resume_text' in locals() and analyze_achievements(resume_text) else [],
             "Category Matches": category_scores,
             "Skill Gaps": skill_gaps,
             "Matched Skills": matched_skills,
