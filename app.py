@@ -516,18 +516,27 @@ if st.button(" Evaluate"):
         # Combine with extracted sections
         results.update(resume_sections)
         
-        match_percentage = results.get('Match Percentage', 0)
-        if 'JD Match' in results:
-            match_str = results['JD Match'].replace('%', '')
+        # Handle match percentage with multiple fallbacks
+        match_percentage = 0  # Default value
+        
+        # Try getting from numeric field first
+        if isinstance(results.get('Match Percentage'), (int, float)):
+            match_percentage = float(results['Match Percentage'])
+        # Fallback to string field
+        elif 'JD Match' in results:
             try:
-                match_percentage = float(match_str)
-            except ValueError:
+                match_str = str(results['JD Match']).replace('%', '').strip()
+                match_percentage = float(match_str) if match_str else 0
+            except (ValueError, AttributeError):
                 match_percentage = 0
         
+        # Ensure value is within 0-100 range
+        match_percentage = max(0, min(100, match_percentage))
         results['Match Percentage'] = match_percentage
         
+        # Display with color coding
         color = 'green' if match_percentage >= 80 else 'orange' if match_percentage >= 60 else 'red'
-        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_percentage}%</h2>", 
+        st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_percentage:.1f}%</h2>", 
                    unsafe_allow_html=True)
         
         # Create three tabs for organized results display
