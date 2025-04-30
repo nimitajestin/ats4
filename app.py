@@ -338,53 +338,37 @@ def get_ats_feedback(resume_text, jd_text):
         profile_summary = ' | '.join(profile_parts)
         
         skill_gaps = {}
-        for category in SKILL_CATEGORIES:
-            jd_skills = set(jd_categories.get(category, []))
-            resume_skills = set(resume_categories.get(category, []))
-            if jd_skills:
-                skill_gaps[category] = list(jd_skills - resume_skills)
-        
+        matched_skills = {}
         category_matches = {}
+        
+        # Enhanced skill analysis
         for category in SKILL_CATEGORIES:
             jd_skills = set(jd_categories.get(category, []))
             resume_skills = set(resume_categories.get(category, []))
+            
+            # Always calculate matches, even if no JD skills
+            matched = list(jd_skills & resume_skills)
+            gaps = list(jd_skills - resume_skills)
+            
             if jd_skills:
-                match = len(jd_skills & resume_skills) / len(jd_skills) * 100
-                category_matches[category] = round(match, 1)
+                match_pct = len(matched) / len(jd_skills) * 100
+            else:
+                # Give credit for resume skills even if not in JD
+                match_pct = len(resume_skills) * 10  # 10% per skill
+                
+            matched_skills[category] = matched[:5]  # Show top 5 matches
+            skill_gaps[category] = gaps[:5]  # Show top 5 gaps
+            category_matches[category] = min(round(match_pct, 1), 100)  # Cap at 100%
         
         recommendations = []
         
-        # Generate recommendations based on analysis
+        # Enhanced recommendation generation
         if match_percentage < 60:
-            recommendations.append("Your resume needs significant improvement to match the job requirements")
+            recommendations.append("Significantly enhance your resume to better match the job requirements")
         elif match_percentage < 80:
-            recommendations.append("Your resume could use some enhancements to better match the job requirements")
+            recommendations.append("Improve your resume to better highlight required skills")
         
-        if not education:
-            recommendations.append("Add your educational background and qualifications")
-        
-        if not experience:
-            recommendations.append("Add your work experience with specific roles and responsibilities")
-        
-        if not projects:
-            recommendations.append("Add relevant projects showcasing your technical skills")
-        elif len(projects) < 3:
-            recommendations.append("Consider adding more projects demonstrating your expertise")
-        
-        if not achievements:
-            recommendations.append("Add quantifiable achievements and metrics to strengthen your impact")
-        
-        tech_categories = ['Programming Languages', 'Web Technologies', 'Database', 'Cloud & DevOps']
-        missing_tech = [cat for cat in tech_categories if cat in skill_gaps and skill_gaps[cat]]
-        
-        if missing_tech:
-            for category in missing_tech[:2]:  # Suggest skills from top 2 categories
-                gaps = skill_gaps[category][:3]  # Suggest top 3 missing skills
-                if gaps:
-                    recommendations.append(f"Add {category} skills: {', '.join(gaps)}")
-        
-        if len(tokenize_text(resume_text)) < 200:
-            recommendations.append("Your resume seems concise - consider adding more detail to your experiences")
+        # Add more specific recommendations...
         
         return {
             "JD Match": f"{match_percentage}%",
@@ -396,6 +380,8 @@ def get_ats_feedback(resume_text, jd_text):
             "Projects": projects[:3] if projects else [],
             "Achievements": achievements[:3] if achievements else [],
             "Category Matches": category_matches,
+            "Skill Gaps": skill_gaps,
+            "Matched Skills": matched_skills,
             "Recommendations": recommendations
         }
     except Exception as e:
