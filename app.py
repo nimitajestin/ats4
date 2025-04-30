@@ -1,10 +1,10 @@
 import streamlit as st
 import os                  
-import PyPDF2 as pdf      
-import json               
-import re                 
-from collections import Counter  
-from sklearn.feature_extraction.text import TfidfVectorizer  
+import PyPDF2  # Make sure this is at the top with other imports
+import re
+import json
+from collections import Counter
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity      
 import nltk
 from nltk.corpus import stopwords
