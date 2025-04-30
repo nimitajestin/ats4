@@ -471,25 +471,31 @@ if st.button(" Evaluate"):
     if uploaded_resume and jd_input.strip():
         # Show loading spinner while processing
         with st.spinner("Analyzing Resume..."):
-            # Get raw text first
+            # Extract text
             raw_text = extract_text_from_pdf(uploaded_resume)
             if not raw_text:
                 st.error("Failed to extract text from PDF")
                 st.stop()
-                
-            # Extract sections
+            
+            # Get all sections
             resume_sections = extract_resume_sections(raw_text)
             
-            # Combine sections for comprehensive analysis
-            comprehensive_text = ' '.join(resume_sections.values())
+            # Convert all sections to strings for analysis
+            analysis_text = ""
+            for section, content in resume_sections.items():
+                if isinstance(content, list):
+                    analysis_text += " ".join(content) + " "
+                else:
+                    analysis_text += content + " "
             
-            ats_response = get_ats_feedback(comprehensive_text, jd_input)
+            # Get ATS analysis
+            ats_response = get_ats_feedback(analysis_text.strip(), jd_input)
             if not ats_response:
                 st.error("Failed to generate ATS feedback")
                 st.stop()
-                
-            st.markdown("---")
-            st.markdown("### ATS Evaluation Results")
+            
+            # Combine results
+            results = {**resume_sections, **ats_response}
         
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
