@@ -693,3 +693,13 @@ if st.button(" Evaluate"):
             return None  # Proper return statement inside function
     else:
         st.warning("Please upload a resume and enter a job description.")
+
+        try:
+            # Display enhanced results
+            display_enhanced_results(results)
+        except json.JSONDecodeError:
+            st.error("Failed to parse analysis results")
+            return None
+        except Exception as e:
+            st.error(f"Error displaying results: {str(e)}")
+            return None
