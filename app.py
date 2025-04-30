@@ -449,17 +449,22 @@ if st.button(" Evaluate"):
     if uploaded_resume and jd_input.strip():
         # Show loading spinner while processing
         with st.spinner("Analyzing Resume..."):
-            resume_text = extract_text_from_pdf(uploaded_resume)
-            if not resume_text:
+            # Get raw text first
+            raw_text = extract_text_from_pdf(uploaded_resume)
+            if not raw_text:
                 st.error("Failed to extract text from PDF")
                 st.stop()
                 
-            resume_text = preprocess_text(resume_text)
-            if not resume_text:
+            # Extract sections
+            resume_sections = extract_resume_sections(raw_text)
+            
+            # Process main text for analysis
+            processed_text = preprocess_text(raw_text)
+            if not processed_text:
                 st.error("Failed to process resume text")
                 st.stop()
                 
-            ats_response = get_ats_feedback(resume_text, jd_input)
+            ats_response = get_ats_feedback(processed_text, jd_input)
             if not ats_response:
                 st.error("Failed to generate ATS feedback")
                 st.stop()
