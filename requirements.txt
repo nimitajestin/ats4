@@ -1,7 +1,7 @@
-streamlit
-PyPDF2
+streamlit>=1.24.0
+PyPDF2>=3.0.0
 spacy>=3.0.0
 scikit-learn>=0.24.0
-nltk
-streamlit
-pandas
+nltk>=3.8.0
+pandas>=1.5.0
+numpy>=1.23.0
