@@ -599,18 +599,3 @@ if st.button(" Evaluate"):
     # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
-                    for category in results['Skill Gaps']:
-                        if results['Skill Gaps'][category]:
-                            st.error(f"Develop {category} skills: {', '.join(results['Skill Gaps'][category][:3])}")
-                    
-                    st.info("💡 Learning resources:")
-                    st.markdown("""
-                    - [FreeCodeCamp](https://www.freecodecamp.org/)
-                    - [Coursera](https://www.coursera.org/)
-                    - [Udemy](https://www.udemy.com/)
-                    """)
-                else:
-                    st.success("✔ Your skills match well with the job requirements!")
-    # Show warning if inputs are missing
-    else:
-        st.warning("Please upload a resume and enter a job description.")
