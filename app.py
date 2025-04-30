@@ -22,16 +22,7 @@ from nltk.corpus import stopwords
 @st.cache_resource
 def download_nltk_data():
     try:
-        # Download punkt tokenizer
-        try:
-            nltk.data.find('tokenizers/punkt')
-        except LookupError:
-            with st.spinner('Downloading punkt tokenizer...'):
-                nltk.download('punkt', quiet=True)
-                # Verify download
-                nltk.data.find('tokenizers/punkt')
-        
-        # Then try to find stopwords
+        # Download stopwords
         try:
             nltk.data.find('corpora/stopwords')
         except LookupError:
@@ -144,11 +135,16 @@ def extract_skills_and_keywords(text):
                     )
     
     stop_words = set(stopwords.words('english'))
-    words = word_tokenize(text)
+    try:
+        words = word_tokenize(text)
+    except LookupError:
+        # Fallback to simple whitespace tokenization if NLTK tokenizer fails
+        words = text.split()
+    
     words = [word.lower() for word in words if word.isalnum() and word.lower() not in stop_words]
     
-    bigrams = [' '.join(pair) for pair in zip(words[:-1], words[1:])]
-    trigrams = [' '.join(triple) for triple in zip(words[:-2], words[1:-1], words[2:])]
+    bigrams = [words[i] + ' ' + words[i+1] for i in range(len(words)-1)]
+    trigrams = [words[i] + ' ' + words[i+1] + ' ' + words[i+2] for i in range(len(words)-2)]
     
     all_terms = words + bigrams + trigrams
     term_freq = Counter(all_terms)
