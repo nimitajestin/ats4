@@ -1,5 +1,84 @@
 import streamlit as st
 
+# Configure the Streamlit page settings
+st.set_page_config(
+    page_title="Verq ATS Evaluator",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS with new color scheme
+st.markdown("""
+<style>
+    :root {
+        --primary-color: #4361ee;
+        --primary-light: rgba(67, 97, 238, 0.1);
+        --text-primary: #2c3e50;
+        --text-secondary: #7f8c8d;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f5f5f5;
+        --border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Main app styling */
+    .stApp {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: var(--bg-secondary);
+    }
+
+    /* Headers */
+    h1, h2, h3 {
+        color: var(--primary-color);
+    }
+
+    /* Buttons */
+    .stButton>button {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        border: none;
+        transition: all 0.3s;
+    }
+    .stButton>button:hover {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+    }
+
+    /* Input fields */
+    .stTextInput>div>div>input {
+        border-radius: 8px;
+        border-color: var(--border-color);
+    }
+
+    /* File uploader */
+    .stFileUploader {
+        border-radius: 8px;
+        border-color: var(--border-color);
+        padding: var(--gap-md);
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary-light: rgba(67, 97, 238, 0.2);
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Download required NLTK data
 try:
     nltk.data.find('tokenizers/punkt')
