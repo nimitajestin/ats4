@@ -1,15 +1,14 @@
-# Core imports at the very top
-import PyPDF2
 import streamlit as st
-import re
-import json
-from collections import Counter
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import os                  
+import PyPDF2 as pdf      
+import json               
+import re                 
+from collections import Counter  
+from sklearn.feature_extraction.text import TfidfVectorizer  
+from sklearn.metrics.pairwise import cosine_similarity      
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-import os
 
 # Text processing utilities
 def clean_text(text):
@@ -171,79 +170,35 @@ def calculate_match_percentage(resume_text, jd_text):
         print(f"Error in calculate_match_percentage: {str(e)}")
         return {'score': 0, 'category_scores': {}}
 
-def extract_resume_sections(text):
-    """Extract structured sections from resume text"""
-    sections = {
-        'profile': '',
-        'experience': '',
-        'education': '',
-        'projects': '',
-        'achievements': ''
-    }
-    
-    # Common section headers pattern
-    section_patterns = {
-        'profile': r'(summary|profile|about)\b',
-        'experience': r'(experience|work history|employment)\b',
-        'education': r'(education|academics|qualifications)\b',
-        'projects': r'(projects|key projects|notable projects)\b',
-        'achievements': r'(achievements|accomplishments|key achievements)\b'
-    }
-    
-    # Split text into lines and process
-    lines = text.split('\n')
-    current_section = None
-    
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-            
-        # Check for section headers
-        for section, pattern in section_patterns.items():
-            if re.search(pattern, line, re.I):
-                current_section = section
-                break
-                
-        # Add content to current section
-        if current_section and not re.search('|'.join(section_patterns.values()), line, re.I):
-            sections[current_section] += line + '\n'
-    
-    return sections
-
 def extract_text_from_pdf(uploaded_file):
+    """Handle Streamlit UploadedFile objects"""
     text = ""
     try:
         reader = PyPDF2.PdfReader(uploaded_file)
         for page in reader.pages:
-            text += page.extract_text() + '\n'
-        return extract_resume_sections(text)
+            page_text = page.extract_text()
+            if page_text:
+                page_text = re.sub(r'\s+', ' ', page_text)
+                text += page_text + '\n\n'
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-        return None
+    return text.strip()
 
 def preprocess_text(text):
-    """Enhanced text preprocessing with null checks"""
-    if not text or not isinstance(text, str):
-        return ""
-        
-    try:
-        # Preserve special characters that might indicate skills/qualifications
-        text = re.sub(r'([a-z])\s*[/&]\s*([a-z])', r'\1/\2', text.lower())
-        
-        # Handle bullet points and special formatting
-        text = re.sub(r'•|\u2022', '*', text)
-        
-        # Remove unwanted characters but preserve meaningful symbols
-        text = re.sub(r'[^a-z0-9\s*&+\-/,]', ' ', text)
-        
-        # Normalize whitespace while preserving list structures
-        text = re.sub(r'\s+', ' ', text).strip()
-        
-        return text
-    except Exception as e:
-        st.error(f"Error preprocessing text: {str(e)}")
-        return ""
+    """Enhanced text preprocessing for better analysis"""
+    # Preserve special characters that might indicate skills/qualifications
+    text = re.sub(r'([a-z])\s*[/&]\s*([a-z])', r'\1/\2', text.lower())  # Preserve skill combinations
+    
+    # Handle bullet points and special formatting
+    text = re.sub(r'•|\u2022', '*', text)  # Standardize bullet points
+    
+    # Remove unwanted characters but preserve meaningful symbols
+    text = re.sub(r'[^a-z0-9\s*&+\-/,]', ' ', text)
+    
+    # Normalize whitespace while preserving list structures
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    return text
 
 def analyze_education(text):
     text_lower = text.lower()
@@ -463,36 +418,6 @@ if st.button(" Evaluate"):
             if ats_response:
                 st.markdown("---")
                 st.markdown("### ATS Evaluation Results")
-                
-                try:
-                    # Ensure results is a dictionary
-                    if isinstance(ats_response, str):
-                        results = json.loads(ats_response)
-                    elif isinstance(ats_response, dict):
-                        results = ats_response
-                    else:
-                        st.error("Invalid response format")
-                        return
-                        
-                    # Safely get match percentage with validation
-                    if not isinstance(results, dict):
-                        st.error("Results must be a dictionary")
-                        return
-                        
-                    match_str = str(results.get('JD Match', '0%'))
-                    try:
-                        match_pct = float(match_str.strip('%'))
-                    except (ValueError, AttributeError):
-                        match_pct = 0.0
-                        match_str = '0%'
-                        
-                    color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-                    st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_str}</h2>", 
-                               unsafe_allow_html=True)
-                    
-                    # Rest of the display logic...
-                except Exception as e:
-                    st.error(f"Error processing results: {str(e)}")
         
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
@@ -513,52 +438,125 @@ if st.button(" Evaluate"):
         
         # Tab 1: Overview - Display basic profile information
         with tab1:
-            st.subheader("Candidate Overview")
-            st.write(f"**Match Score:** {match_str}")
-            st.write(f"**Profile Summary:** {results.get('Profile Summary', 'N/A')}")
+            # Show profile summary
+            st.markdown("### Profile Summary")
+            st.info(results.get('Profile Summary', ''))
             
-            # Education section
-            st.subheader("Education")
-            st.write(results.get('Education', 'N/A'))
+            # Display education and experience in two columns
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("### Education")
+                st.write(results.get('Education', ''))
+            with col2:
+                st.markdown("### Experience")
+                st.write(results.get('Experience', ''))
             
-            # Experience section
-            st.subheader("Experience")
-            st.write(results.get('Experience', 'N/A'))
+            # Display projects and achievements if available
+            if results.get('Projects', []) or results.get('Achievements', []):
+                st.markdown("### Key Highlights")
+                
+                # Show top 3 projects
+                if results.get('Projects', []):
+                    st.markdown("#### Notable Projects")
+                    for project in results['Projects'][:3]:
+                        st.markdown(f"* {project.capitalize()}")
+                
+                # Show top 3 achievements
+                if results.get('Achievements', []):
+                    st.markdown("#### Key Achievements")
+                    for achievement in results['Achievements'][:3]:
+                        st.markdown(f"* {achievement.capitalize()}")
         
         # Tab 2: Skills Analysis - Show detailed skill matching and gaps
         with tab2:
-            # Skills analysis using match_pct instead of match_percentage
-            st.subheader("Skills Analysis")
-            display_skills_analysis(results, match_pct)
+            st.markdown("### Skills Analysis")
+            
+            for category, score in results['Category Matches'].items():
+                if score > 0:
+                    color = 'green' if score >= 80 else 'orange' if score >= 60 else 'red'
+                    st.markdown(f"<span style='color:{color}'>{category} - {score}% Match</span>", unsafe_allow_html=True)
+                    
+                    # Show matched skills
+                    if category in results.get('Matched Skills', {}):
+                        st.markdown(f"**Your strong {category.lower()} skills:**")
+                        cols = st.columns(3)
+                        for i, skill in enumerate(results['Matched Skills'][category][:6]):
+                            cols[i%3].success(f"✓ {skill}")
+                    
+                    # Show skill gaps
+                    if category in results.get('Skill Gaps', {}) and results['Skill Gaps'][category]:
+                        st.markdown(f"**Recommended {category.lower()} skills to add:**")
+                        for skill in results['Skill Gaps'][category][:3]:
+                            st.error(f"- {skill}")
+                else:
+                    st.markdown(f"{category} - No matching skills found")
         
         # Tab 3: Recommendations - Enhanced feedback and suggestions
         with tab3:
-            st.subheader("Recommendations")
-            st.write(results.get('Recommendations', 'N/A'))    
+            st.markdown("### Personalized Recommendations")
+            
+            # Resume Structure Recommendations
+            with st.expander("Resume Structure", expanded=True):
+                if results.get('Projects', []):
+                    st.success("✔ You have a good projects section")
+                else:
+                    st.error("✘ Add a projects section with 2-3 relevant projects")
+                
+                if results.get('Achievements', []):
+                    st.success("✔ Good job highlighting achievements")
+                else:
+                    st.error("✘ Add an achievements section with quantifiable results")
+                
+                st.info("💡 General tips:")
+                st.markdown("""
+                - Use bullet points for readability
+                - Keep resume to 1-2 pages maximum
+                - Use strong action verbs (developed, optimized, led)
+                - Quantify achievements with metrics
+                """)
+            
+            # Skill Development Recommendations
+            with st.expander("Skill Development", expanded=True):
+                if 'Skill Gaps' in results:
+                    for category in results['Skill Gaps']:
+                        if results['Skill Gaps'][category]:
+                            st.error(f"Develop {category} skills: {', '.join(results['Skill Gaps'][category][:3])}")
+                    
+                    st.info("💡 Learning resources:")
+                    st.markdown("""
+                    - [FreeCodeCamp](https://www.freecodecamp.org/)
+                    - [Coursera](https://www.coursera.org/)
+                    - [Udemy](https://www.udemy.com/)
+                    """)
+                else:
+                    st.success("✔ Your skills match well with the job requirements!")
     # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
 
-def display_skills_analysis(results, match_pct):
-    """Display detailed skills analysis using match_pct"""
-    st.subheader("Skills Analysis")
-    
-    for category, score in results['Category Matches'].items():
-        if score > 0:
-            color = 'green' if score >= 80 else 'orange' if score >= 60 else 'red'
-            st.markdown(f"<span style='color:{color}'>{category} - {score}% Match</span>", unsafe_allow_html=True)
+                    """)
+                else:
+                    st.success("✔ Your skills match well with the job requirements!")
+    # Show warning if inputs are missing
+    else:
+        st.warning("Please upload a resume and enter a job description.")
+
             
-            # Show matched skills
-            if category in results.get('Matched Skills', {}):
-                st.markdown(f"**Your strong {category.lower()} skills:**")
-                cols = st.columns(3)
-                for i, skill in enumerate(results['Matched Skills'][category][:6]):
-                    cols[i%3].success(f"✓ {skill}")
-            
-            # Show skill gaps
-            if category in results.get('Skill Gaps', {}) and results['Skill Gaps'][category]:
-                st.markdown(f"**Recommended {category.lower()} skills to add:**")
-                for skill in results['Skill Gaps'][category][:3]:
-                    st.error(f"- {skill}")
-        else:
-            st.markdown(f"{category} - No matching skills found")
+            # Skill Development Recommendations
+            with st.expander("Skill Development", expanded=True):
+                if 'Skill Gaps' in results:
+                    for category in results['Skill Gaps']:
+                        if results['Skill Gaps'][category]:
+                            st.error(f"Develop {category} skills: {', '.join(results['Skill Gaps'][category][:3])}")
+                    
+                    st.info("💡 Learning resources:")
+                    st.markdown("""
+                    - [FreeCodeCamp](https://www.freecodecamp.org/)
+                    - [Coursera](https://www.coursera.org/)
+                    - [Udemy](https://www.udemy.com/)
+                    """)
+                else:
+                    st.success("✔ Your skills match well with the job requirements!")
+    # Show warning if inputs are missing
+    else:
+        st.warning("Please upload a resume and enter a job description.")
