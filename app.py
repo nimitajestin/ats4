@@ -473,37 +473,43 @@ if st.button(" Evaluate"):
         
         # Tab 3: Recommendations - Enhanced feedback and suggestions
         with tab3:
-            st.markdown("### Recommendations")
+            st.markdown("### Personalized Recommendations")
             
             # Resume Structure Recommendations
             with st.expander("Resume Structure", expanded=True):
-                if results.get('Recommendations', []):
-                    for i, rec in enumerate(results['Recommendations'][:3], 1):
-                        st.markdown(f"{i}. {rec}")
+                if results.get('Projects', []):
+                    st.success("✔ You have a good projects section")
                 else:
-                    st.info("No specific structure recommendations available")
+                    st.error("✘ Add a projects section with 2-3 relevant projects")
+                
+                if results.get('Achievements', []):
+                    st.success("✔ Good job highlighting achievements")
+                else:
+                    st.error("✘ Add an achievements section with quantifiable results")
+                
+                st.info("💡 General tips:")
+                st.markdown("""
+                - Use bullet points for readability
+                - Keep resume to 1-2 pages maximum
+                - Use strong action verbs (developed, optimized, led)
+                - Quantify achievements with metrics
+                """)
             
-            # Skill Development Plan
-            with st.expander("Skill Development Plan", expanded=True):
+            # Skill Development Recommendations
+            with st.expander("Skill Development", expanded=True):
                 if 'Skill Gaps' in results:
-                    st.markdown("**Focus on developing these skills:**")
-                    for category in ['Technical', 'Soft', 'Domain']:
-                        if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                            st.markdown(f"**{category}:** {', '.join(results['Skill Gaps'][category][:3])}")
+                    for category in results['Skill Gaps']:
+                        if results['Skill Gaps'][category]:
+                            st.error(f"Develop {category} skills: {', '.join(results['Skill Gaps'][category][:3])}")
+                    
+                    st.info("💡 Learning resources:")
+                    st.markdown("""
+                    - [FreeCodeCamp](https://www.freecodecamp.org/)
+                    - [Coursera](https://www.coursera.org/)
+                    - [Udemy](https://www.udemy.com/)
+                    """)
                 else:
-                    st.success("Your skills match well with the job requirements!")
-            
-            # General Tips
-            with st.expander("General Resume Tips", expanded=True):
-                tips = [
-                    "Use strong action verbs (e.g., 'developed', 'managed', 'optimized')",
-                    "Quantify achievements with numbers where possible",
-                    "Keep resume to 1-2 pages maximum",
-                    "Use consistent formatting throughout",
-                    "Tailor your resume for each job application"
-                ]
-                for tip in tips:
-                    st.markdown(f"* {tip}")
+                    st.success("✔ Your skills match well with the job requirements!")
     # Show warning if inputs are missing
     else:
         st.warning("Please upload a resume and enter a job description.")
