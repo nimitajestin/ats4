@@ -458,13 +458,10 @@ if st.button(" Evaluate"):
             # Extract sections
             resume_sections = extract_resume_sections(raw_text)
             
-            # Process main text for analysis
-            processed_text = preprocess_text(raw_text)
-            if not processed_text:
-                st.error("Failed to process resume text")
-                st.stop()
-                
-            ats_response = get_ats_feedback(processed_text, jd_input)
+            # Combine sections for comprehensive analysis
+            comprehensive_text = ' '.join(resume_sections.values())
+            
+            ats_response = get_ats_feedback(comprehensive_text, jd_input)
             if not ats_response:
                 st.error("Failed to generate ATS feedback")
                 st.stop()
