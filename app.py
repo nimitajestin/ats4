@@ -489,36 +489,36 @@ if st.button(" Evaluate"):
         
         # Tab 2: Skills Analysis - Show detailed skill matching and gaps
         with tab2:
-            # Display skill categories with match percentages
             st.markdown("### Skills Analysis")
-            if 'Skill Gaps' in results and results['Skill Gaps']:
-                for category in ['Technical', 'Soft', 'Domain']:
-                    if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                        # Create a progress bar layout with 75-25 split
-                        col1, col2 = st.columns([3, 1])
-                        with col1:
-                            # Color code the progress bars based on match percentage
-                            progress_color = 'green' if results['Category Matches'].get(category, 0) >= 80 else 'orange' if results['Category Matches'].get(category, 0) >= 60 else 'red'
-                            st.markdown(f"**{category}**")
-                            st.progress(results['Category Matches'].get(category, 0)/100)  # Show progress bar
-                        with col2:
-                            # Display match percentage with color coding
-                            st.markdown(f"<h4 style='color: {progress_color}'>{results['Category Matches'].get(category, 0)}%</h4>", unsafe_allow_html=True)
-                        
-                        # Show missing skills in each category
-                        if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                            st.caption(f"Missing: {', '.join(results['Skill Gaps'][category])}")
             
-            # Display strengths and areas for improvement side by side
+            # Always show skill categories if Category Matches exists
+            if 'Category Matches' in results:
+                for category in ['Technical', 'Soft', 'Domain']:
+                    match_pct = results['Category Matches'].get(category, 0)
+                    progress_color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
+                    
+                    # Create progress bar layout
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.markdown(f"**{category}**")
+                        st.progress(match_pct/100)
+                    with col2:
+                        st.markdown(f"<h4 style='color: {progress_color}'>{match_pct}%</h4>", unsafe_allow_html=True)
+                    
+                    # Show missing skills if available
+                    if 'Skill Gaps' in results and category in results['Skill Gaps'] and results['Skill Gaps'][category]:
+                        st.caption(f"Missing: {', '.join(results['Skill Gaps'][category])}")
+            
+            # Display strengths and areas for improvement
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("### Key Strengths")
                 for strength in results.get('Key Strengths', []):
-                    st.markdown(f"+ {strength}")  # Use bullet points for strengths
+                    st.markdown(f"+ {strength}")
             with col2:
                 st.markdown("### Areas to Add")
                 for keyword in results.get('Missing Keywords', []):
-                    st.markdown(f"- {keyword}")  # Use minus for missing skills
+                    st.markdown(f"- {keyword}")
         
         # Tab 3: Recommendations - Provide actionable feedback
         with tab3:
