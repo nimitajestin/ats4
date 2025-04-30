@@ -223,20 +223,27 @@ def extract_text_from_pdf(uploaded_file):
         return None
 
 def preprocess_text(text):
-    """Enhanced text preprocessing for better analysis"""
-    # Preserve special characters that might indicate skills/qualifications
-    text = re.sub(r'([a-z])\s*[/&]\s*([a-z])', r'\1/\2', text.lower())  # Preserve skill combinations
-    
-    # Handle bullet points and special formatting
-    text = re.sub(r'•|\u2022', '*', text)  # Standardize bullet points
-    
-    # Remove unwanted characters but preserve meaningful symbols
-    text = re.sub(r'[^a-z0-9\s*&+\-/,]', ' ', text)
-    
-    # Normalize whitespace while preserving list structures
-    text = re.sub(r'\s+', ' ', text).strip()
-    
-    return text
+    """Enhanced text preprocessing with null checks"""
+    if not text or not isinstance(text, str):
+        return ""
+        
+    try:
+        # Preserve special characters that might indicate skills/qualifications
+        text = re.sub(r'([a-z])\s*[/&]\s*([a-z])', r'\1/\2', text.lower())
+        
+        # Handle bullet points and special formatting
+        text = re.sub(r'•|\u2022', '*', text)
+        
+        # Remove unwanted characters but preserve meaningful symbols
+        text = re.sub(r'[^a-z0-9\s*&+\-/,]', ' ', text)
+        
+        # Normalize whitespace while preserving list structures
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+    except Exception as e:
+        st.error(f"Error preprocessing text: {str(e)}")
+        return ""
 
 def analyze_education(text):
     text_lower = text.lower()
