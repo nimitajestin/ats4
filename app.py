@@ -1,8 +1,8 @@
+import PyPDF2
 import streamlit as st
 import os                  
-import PyPDF2 as pdf      
-import json               
 import re                 
+import json               
 from collections import Counter  
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
