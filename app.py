@@ -44,7 +44,7 @@ STOP_WORDS = {
     'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 
     'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
     'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 
-    'under', 'again', 'further', 'then', 'once'
+    'under', 'again', 'further', 'then'
 }
 
 SKILL_CATEGORIES = {
@@ -493,217 +493,127 @@ def display_enhanced_results(results):
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
     try:
-        # Initialize all variables with defaults
-        profile_summary = ""
-        matched_keywords = []
+        # Enhanced keyword extraction with weights
+        resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
+        jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
+        
+        # Calculate keyword frequencies
+        resume_kw_freq = {kw: resume_keywords.count(kw) for kw in set(resume_keywords)}
+        jd_kw_freq = {kw: jd_keywords.count(kw) for kw in set(jd_keywords)}
+        
+        # Improved matching with weighted scores
         missing_keywords = []
-        category_scores = {}
+        matched_keywords = []
+        
+        for kw in set(jd_keywords):
+            if kw in resume_keywords:
+                matched_keywords.append((kw, jd_kw_freq[kw]))  # (keyword, importance)
+            else:
+                missing_keywords.append((kw, jd_kw_freq[kw]))
+        
+        # Sort by importance (frequency in JD)
+        matched_keywords.sort(key=lambda x: x[1], reverse=True)
+        missing_keywords.sort(key=lambda x: x[1], reverse=True)
+        
+        # Enhanced skill category analysis
         skill_gaps = {}
         matched_skills = {}
+        category_scores = {}
+        
+        # Define skill category weights
+        CATEGORY_WEIGHTS = {
+            'Technical': 1.2,
+            'Domain': 1.1,
+            'Soft': 0.8
+        }
+        
+        for category in SKILL_CATEGORIES:
+            jd_skills = set(jd_categories.get(category, []))
+            resume_skills = set(resume_categories.get(category, []))
+            
+            matched = list(jd_skills & resume_skills)
+            gaps = list(jd_skills - resume_skills)
+            
+            # Calculate weighted match score
+            if jd_skills:
+                base_score = len(matched) / len(jd_skills) * 100
+                weighted_score = base_score * CATEGORY_WEIGHTS.get(category, 1.0)
+            else:
+                # Credit for additional resume skills (diminishing returns)
+                weighted_score = min(len(resume_skills) * 5, 30)  # Max 30% bonus
+                
+            matched_skills[category] = matched[:8]  # Show top 8 matches
+            skill_gaps[category] = gaps[:5]        # Show top 5 gaps
+            category_scores[category] = min(round(weighted_score, 1), 100)
+        
+        # Calculate overall match percentage (weighted average)
+        total_score = sum(category_scores.values())
+        max_possible = sum(CATEGORY_WEIGHTS.get(c, 1.0) * 100 for c in SKILL_CATEGORIES)
+        match_percentage = round((total_score / max_possible) * 100, 1)
+        
+        # Enhanced recommendation engine
         recommendations = []
         
-        # Perform analysis only if inputs exist
-        if resume_text and jd_text:
-            resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
-            jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
+        # 1. Overall match quality
+        if match_percentage < 40:
+            recommendations.append("🔴 Major Improvement Needed: Your resume shows significant gaps compared to the job requirements")
+        elif match_percentage < 65:
+            recommendations.append("🟠 Moderate Improvement Needed: Several key areas need enhancement")
+        elif match_percentage < 85:
+            recommendations.append("🟡 Minor Improvements: Your resume is good but could be stronger")
+        else:
+            recommendations.append("🟢 Strong Match: Your resume aligns well with the job requirements")
+        
+        # 2. Category-specific recommendations
+        for category in SKILL_CATEGORIES:
+            score = category_scores[category]
+            gaps = skill_gaps[category]
             
-            # Calculate keyword matches
-            matched_keywords = [(kw, jd_keywords.count(kw)) 
-                              for kw in set(jd_keywords) if kw in resume_keywords]
-            missing_keywords = [(kw, jd_keywords.count(kw)) 
-                              for kw in set(jd_keywords) if kw not in resume_keywords]
+            if score < 50:
+                rec = f"⚠️ Focus on {category} skills: "
+                if gaps:
+                    rec += f"Add {', '.join(gaps[:3])}"
+                else:
+                    rec += f"Highlight your {category.lower()} skills more prominently"
+                recommendations.append(rec)
             
-            # Sort by frequency in JD (importance)
-            matched_keywords.sort(key=lambda x: x[1], reverse=True)
-            missing_keywords.sort(key=lambda x: x[1], reverse=True)
-            
-            # Rest of your analysis code...
-            match_percentage = calculate_match_percentage(resume_text, jd_text)
-            
-            education = analyze_education(resume_text)
-            experience = analyze_experience(resume_text)
-            
-            if education:
-                profile_summary = education.strip().capitalize()
-            if experience:
-                if profile_summary:
-                    profile_summary += " | "
-                profile_summary += experience
-            
-            # Skill category analysis...
-            
+        # 3. Content completeness checks
+        sections_missing = []
+        if not analyze_education(resume_text):
+            sections_missing.append("education")
+        if not analyze_experience(resume_text):
+            sections_missing.append("work experience")
+        if sections_missing:
+            recommendations.append(f"✏️ Add missing sections: {', '.join(sections_missing)}")
+        
+        # 4. Impactful writing suggestions
+        if len(analyze_achievements(resume_text)) < 2:
+            recommendations.append("💡 Add more achievements with quantifiable results (e.g., 'Increased sales by 30%')")
+        
+        # 5. Skill demonstration
+        projects = analyze_projects(resume_text)
+        if not projects:
+            recommendations.append("🛠️ Add projects demonstrating your technical skills")
+        elif len(projects) < 2:
+            recommendations.append("🛠️ Include more projects that showcase relevant skills")
+        
         return {
-            "JD Match": f"{match_percentage}%" if 'match_percentage' in locals() else "0%",
+            "JD Match": f"{match_percentage}%",
             "Profile Summary": profile_summary,
             "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
             "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
-            "Education": analyze_education(resume_text) if 'resume_text' in locals() else "No education details found",
-            "Experience": analyze_experience(resume_text) if 'resume_text' in locals() else "No experience details found",
-            "Projects": analyze_projects(resume_text)[:3] if 'resume_text' in locals() and analyze_projects(resume_text) else [],
-            "Achievements": analyze_achievements(resume_text)[:3] if 'resume_text' in locals() and analyze_achievements(resume_text) else [],
+            "Education": analyze_education(resume_text) or "",
+            "Experience": analyze_experience(resume_text) or "",
+            "Projects": projects[:3],
+            "Achievements": analyze_achievements(resume_text)[:3],
             "Category Matches": category_scores,
             "Skill Gaps": skill_gaps,
             "Matched Skills": matched_skills,
-            "Recommendations": generate_custom_recommendations(resume_text, jd_text, {
-                "JD Match": f"{match_percentage}%",
-                "Profile Summary": profile_summary,
-                "Key Strengths": [kw[0] for kw in matched_keywords[:5]],
-                "Missing Keywords": [kw[0] for kw in missing_keywords[:5]],
-                "Education": analyze_education(resume_text),
-                "Experience": analyze_experience(resume_text),
-                "Projects": analyze_projects(resume_text)[:3],
-                "Achievements": analyze_achievements(resume_text)[:3],
-                "Category Matches": category_scores,
-                "Skill Gaps": skill_gaps,
-                "Matched Skills": matched_skills,
-                "Recommendations": []
-            })
+            "Recommendations": recommendations
         }
-        
-        # Handle case where response is already parsed or needs parsing
-        if isinstance(ats_response, str):
-            results = json.loads(ats_response)
-        else:
-            results = ats_response
-        
-        try:
-            # Display basic results with colored match percentage
-            match_pct = results.get('JD Match', '0%')
-            color = 'green' if float(match_pct.strip('%')) >= 70 else 'orange' if float(match_pct.strip('%')) >= 50 else 'red'
-            st.markdown(f"<h3 style='color: {color};'>Overall Match: {match_pct}</h3>", unsafe_allow_html=True)
-            
-            # Show key strengths and areas for improvement in columns
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Key Strengths**")
-                for strength in results.get('Key Strengths', [])[:3]:
-                    st.success(f" {strength}")
-            with col2:
-                st.markdown("**Areas for Improvement**")
-                for keyword in results.get('Missing Keywords', [])[:3]:
-                    st.error(f" {keyword}")
-            
-            # Show top 3 recommendations
-            if results.get('Recommendations'):
-                st.markdown("---")
-                st.markdown("**Recommendations**")
-                for rec in results['Recommendations'][:3]:
-                    st.info(f"• {rec}")
-                    
-        except Exception as e:
-            st.error(f"Error displaying results: {str(e)}")
-            return
-        
-        # Create three tabs for organized results display
-        tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
-        
-        # Tab 1: Overview - Display basic profile information
-        with tab1:
-            # Show profile summary
-            st.markdown("### Profile Summary")
-            st.info(results.get('Profile Summary', ''))
-            
-            # Display education and experience in two columns
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("### Education")
-                st.write(results.get('Education', ''))
-            with col2:
-                st.markdown("### Experience")
-                st.write(results.get('Experience', ''))
-            
-            # Display projects and achievements if available
-            if results.get('Projects', []) or results.get('Achievements', []):
-                st.markdown("### Key Highlights")
-                
-                # Show top 3 projects
-                if results.get('Projects', []):
-                    st.markdown("#### Notable Projects")
-                    for project in results['Projects'][:3]:
-                        st.markdown(f"* {project.capitalize()}")
-                
-                # Show top 3 achievements
-                if results.get('Achievements', []):
-                    st.markdown("#### Key Achievements")
-                    for achievement in results['Achievements'][:3]:
-                        st.markdown(f"* {achievement.capitalize()}")
-        
-        # Tab 2: Skills Analysis - Show detailed skill matching and gaps
-        with tab2:
-            st.markdown("### Skills Analysis")
-            
-            # Enhanced skill categories display
-            if 'Category Matches' in results:
-                for category in ['Technical', 'Domain', 'Soft']:
-                    match_pct = results['Category Matches'].get(category, 0)
-                    progress_color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
-                    
-                    # Create expandable section for each category
-                    with st.expander(f"{category} Skills - {match_pct}% Match", expanded=True):
-                        # Progress bar with match details
-                        st.progress(match_pct/100)
-                        
-                        # Show matched skills if available
-                        if 'Matched Skills' in results and category in results['Matched Skills']:
-                            st.markdown(f"**Your strong {category.lower()} skills:**")
-                            cols = st.columns(3)
-                            for i, skill in enumerate(results['Matched Skills'][category][:6]):
-                                cols[i%3].success(f" {skill}")
-                        
-                        # Show missing skills if available
-                        if 'Skill Gaps' in results and category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                            st.markdown(f"**Recommended {category.lower()} skills to add:**")
-                            for skill in results['Skill Gaps'][category][:5]:
-                                st.error(f"- {skill}")
-            
-            # Strengths vs Areas to Improve
-            st.markdown("### Strengths vs Areas for Improvement")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("#### Your Key Strengths")
-                for strength in results.get('Key Strengths', [])[:5]:
-                    st.success(f" {strength}")
-            with col2:
-                st.markdown("#### Priority Areas")
-                for keyword in results.get('Missing Keywords', [])[:5]:
-                    st.error(f" {keyword}")
-        
-        # Tab 3: Recommendations - Enhanced actionable feedback
-        with tab3:
-            st.markdown("### Personalized Recommendations")
-            
-            # Resume Structure Recommendations
-            with st.expander("Resume Structure", expanded=True):
-                if results.get('Recommendations', []):
-                    for i, rec in enumerate(results['Recommendations'][:3], 1):
-                        st.markdown(f"{i}. {rec}")
-                else:
-                    st.info("No specific structure recommendations available")
-            
-            # Skill Development Plan
-            with st.expander("Skill Development Plan", expanded=True):
-                if 'Skill Gaps' in results:
-                    st.markdown("**Focus on developing these skills:**")
-                    for category in ['Technical', 'Domain', 'Soft']:
-                        if category in results['Skill Gaps'] and results['Skill Gaps'][category]:
-                            st.markdown(f"**{category}:** {', '.join(results['Skill Gaps'][category][:3])}")
-                else:
-                    st.success("Your skills match well with the job requirements!")
-            
-            # General Tips
-            with st.expander("General Resume Tips", expanded=True):
-                tips = [
-                    "Use strong action verbs (e.g., 'developed', 'managed', 'optimized')",
-                    "Quantify achievements with numbers where possible",
-                    "Keep resume to 1-2 pages maximum",
-                    "Use consistent formatting throughout",
-                    "Tailor your resume for each job application"
-                ]
-                for tip in tips:
-                    st.markdown(f"* {tip}")
-    # Show warning if inputs are missing
-    else:
-        st.warning("Please upload a resume and enter a job description.")
+    except Exception as e:
+        st.error(f"Analysis error: {str(e)}")
+        return None
 
 # Streamlit App Interface
 
