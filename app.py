@@ -6,9 +6,6 @@ import re
 from collections import Counter  
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
 # Text processing utilities
 def clean_text(text):
@@ -534,13 +531,14 @@ if st.button(" Evaluate"):
     else:
         st.warning("Please upload a resume and enter a job description.")
 
-                    """)
-                else:
-                    st.success("✔ Your skills match well with the job requirements!")
-    # Show warning if inputs are missing
-    else:
-        st.warning("Please upload a resume and enter a job description.")
-
+                
+                st.info("💡 General tips:")
+                st.markdown("""
+                - Use bullet points for readability
+                - Keep resume to 1-2 pages maximum
+                - Use strong action verbs (developed, optimized, led)
+                - Quantify achievements with metrics
+                """)
             
             # Skill Development Recommendations
             with st.expander("Skill Development", expanded=True):
