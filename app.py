@@ -96,6 +96,15 @@ def display_enhanced_results(results):
                     st.markdown(f"**Missing {category} Skills:**")
                     st.write(", ".join(results['Skill Gaps'][category]))
 
+# Streamlit UI Components
+st.title('ATS Resume Evaluator')
+
+# File uploader
+uploaded_resume = st.file_uploader("Upload Resume (PDF)", type="pdf")
+
+# Job description input
+jd_input = st.text_area("Paste Job Description", height=200)
+
 # Check if both inputs are provided
 if uploaded_resume and jd_input.strip():
     # Show loading spinner while processing
