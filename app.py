@@ -463,6 +463,26 @@ if st.button(" Evaluate"):
             if ats_response:
                 st.markdown("---")
                 st.markdown("### ATS Evaluation Results")
+                
+                try:
+                    if isinstance(ats_response, str):
+                        results = json.loads(ats_response)
+                    else:
+                        results = ats_response
+                        
+                    # Safely handle match percentage with default value
+                    match_str = results.get('JD Match', '0%')
+                    try:
+                        match_pct = float(match_str.strip('%'))
+                    except ValueError:
+                        match_pct = 0.0
+                        match_str = '0%'
+                    
+                    color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
+                    st.markdown(f"<h2 style='color: {color}; text-align: center;'>Overall Match: {match_str}</h2>", 
+                               unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Error displaying results: {str(e)}")
         
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
