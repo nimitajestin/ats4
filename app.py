@@ -504,18 +504,23 @@ if st.button(" Evaluate"):
         
         # Tab 1: Overview - Display basic profile information
         with tab1:
-            # Show profile summary
-            st.markdown("### Profile Summary")
-            st.info(results.get('Profile Summary', ''))
-            
-            # Display education and experience in two columns
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("### Education")
-                st.write(results.get('Education', ''))
-            with col2:
-                st.markdown("### Experience")
-                st.write(results.get('Experience', ''))
+            with st.expander("Overview", expanded=True):
+                if 'Profile Summary' in results and results['Profile Summary']:
+                    st.subheader("Profile Summary")
+                    st.write(results['Profile Summary'])
+                
+                if 'Education' in results and results['Education']:
+                    st.subheader("Education")
+                    st.write(results['Education'])
+                
+                if 'Experience' in results and results['Experience']:
+                    st.subheader("Experience")
+                    st.write(results['Experience'])
+                
+                if 'Match Percentage' in results:
+                    match_pct = results['Match Percentage']
+                    color = "green" if match_pct >= 80 else "orange" if match_pct >= 60 else "red"
+                    st.subheader(f"Match Score: :{color}[{match_pct}%]")
             
             # Display projects and achievements if available
             if results.get('Projects', []) or results.get('Achievements', []):
