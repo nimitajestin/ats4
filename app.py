@@ -525,15 +525,6 @@ if st.button(" Evaluate"):
                 'Skill Gaps': {cat: [] for cat in DOMAIN_CATEGORIES}
             })
             
-            # Display with color coding
-            pct = results['Match Percentage']
-            color = 'green' if pct >= 80 else 'orange' if pct >= 60 else 'red'
-            st.markdown(
-                f"<h2 style='color: {color}; text-align: center;'>"
-                f"Overall Match: {pct:.1f}%</h2>", 
-                unsafe_allow_html=True
-            )
-            
         except Exception as e:
             st.error(f"Match calculation error: {str(e)}")
             results.update({
