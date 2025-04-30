@@ -450,12 +450,22 @@ if st.button(" Evaluate"):
         # Show loading spinner while processing
         with st.spinner("Analyzing Resume..."):
             resume_text = extract_text_from_pdf(uploaded_resume)
-            resume_text = preprocess_text(resume_text)
-            ats_response = get_ats_feedback(resume_text, jd_input)
+            if not resume_text:
+                st.error("Failed to extract text from PDF")
+                return
             
-            if ats_response:
-                st.markdown("---")
-                st.markdown("### ATS Evaluation Results")
+            resume_text = preprocess_text(resume_text)
+            if not resume_text:
+                st.error("Failed to process resume text")
+                return
+            
+            ats_response = get_ats_feedback(resume_text, jd_input)
+            if not ats_response:
+                st.error("Failed to generate ATS feedback")
+                return
+            
+            st.markdown("---")
+            st.markdown("### ATS Evaluation Results")
         
         # Handle case where response is already parsed or needs parsing
         if isinstance(ats_response, str):
