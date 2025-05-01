@@ -108,6 +108,13 @@ st.markdown("""
         [data-theme="dark"] {
             display: none !important;
         }
+        
+        .stMarkdown h6, .stMarkdown label {
+            color: black !important;
+        }
+        .stButton>button {
+            color: white !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -675,24 +682,32 @@ def get_ats_feedback(resume_text, jd_text):
 
 # Streamlit App Interface
 st.markdown("""
-    <div style="text-align: center;">
-        <h1 style="color: #4361ee;">Verq ATS Resume Evaluator</h1>
-        <h5>Upload your resume and job description to get instant feedback</h5>
-    </div>
-    """, unsafe_allow_html=True)
+    <style>
+        .stMarkdown h6, .stMarkdown label {
+            color: black !important;
+        }
+        .stButton>button {
+            color: white !important;
+        }
+    </style>
 
-st.markdown("##  ATS Resume Evaluator")
-st.markdown("<h5>Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</h5>", unsafe_allow_html=True)
+    <div style="text-align: center;">
+        <h1 style="color: #4361ee; font-size: 2.5rem;">Verq ATS Resume Evaluator</h1>
+        <p style="font-size: 1.2rem;">Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</p>
+    </div>
+""", unsafe_allow_html=True)
+
+st.markdown("## ATS Resume Evaluator")
 
 with st.container():
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("<h6>Job Description</h6>", unsafe_allow_html=True)
+        st.markdown("<h6 style='color: black;'>Job Description</h6>", unsafe_allow_html=True)
         jd_input = st.text_area("", height=300, placeholder="Paste the JD here...")
 
     with col2:
-        st.markdown("<h6>Upload Resume (PDF)</h6>", unsafe_allow_html=True)
+        st.markdown("<h6 style='color: black;'>Upload Resume (PDF)</h6>", unsafe_allow_html=True)
         uploaded_resume = st.file_uploader("", type=["pdf"])
 
 if st.button(" Evaluate"):
