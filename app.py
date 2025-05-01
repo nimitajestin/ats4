@@ -15,7 +15,11 @@ st.markdown("""
         }
         
         /* Force light theme */
-        body, .stApp, .stMarkdown, .stText {
+        .stApp {
+            background-color: var(--bg-primary) !important;
+        }
+        
+        body, .stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6 {
             color: var(--text-primary) !important;
         }
         
