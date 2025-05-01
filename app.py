@@ -14,8 +14,8 @@ st.markdown("""
         :root {
             --primary-color: #4361ee;
             --primary-light: rgba(67, 97, 238, 0.1);
-            --text-primary: #4361ee;
-            --text-secondary: #4361ee;
+            --text-primary: white;
+            --text-secondary: black;
             --bg-primary: #ffffff;
             --bg-secondary: #f5f5f5;
             --border-color: rgba(0, 0, 0, 0.1);
@@ -65,7 +65,7 @@ st.markdown("""
         
         /* Upload box text */
         [data-testid="stFileUploader"] p {
-            color: white !important;
+            color: #4361ee !important;
         }
         
         /* Browse files button */
