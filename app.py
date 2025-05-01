@@ -707,16 +707,13 @@ if st.button(" Evaluate"):
                 # Detailed skills breakdown
                 st.markdown("#### Skills Breakdown")
                 
-                jd_skills = {}
-                resume_skills = {}
-                
                 for category in DOMAIN_CATEGORIES:
                     if category in ats_response['Category Matches']:
                         with st.expander(f"{category} ({ats_response['Category Matches'][category]}%)", expanded=True):
                             col1, col2 = st.columns(2)
                             with col1:
                                 st.markdown("**Job Description Skills**")
-                                jd_skills = jd_categories.get(category, {})
+                                jd_skills = ats_response['Missing Keywords']
                                 if jd_skills:
                                     st.dataframe(
                                         pd.DataFrame.from_dict(jd_skills, orient='index', columns=['Score'])
@@ -727,7 +724,7 @@ if st.button(" Evaluate"):
                             
                             with col2:
                                 st.markdown("**Your Resume Skills**")
-                                resume_skills = resume_categories.get(category, {})
+                                resume_skills = ats_response['Key Strengths']
                                 if resume_skills:
                                     st.dataframe(
                                         pd.DataFrame.from_dict(resume_skills, orient='index', columns=['Score'])
