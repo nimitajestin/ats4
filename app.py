@@ -54,18 +54,18 @@ st.markdown("""
         .stFileUploader > div > div {
             background-color: white !important;
             border: 1px dashed #cccccc !important;
-            color: black !important;
+            color: white !important;
         }
         
         /* Upload box */
         [data-testid="stFileUploader"] {
             background-color: white !important;
-            color: black !important;
+            color: white !important;
         }
         
         /* Upload box text */
         [data-testid="stFileUploader"] p {
-            color: black !important;
+            color: #4361ee !important;
         }
         
         /* Browse files button */
