@@ -540,36 +540,26 @@ def get_ats_feedback(resume_text, jd_text):
         # Calculate match percentage and get match data
         match_data = calculate_match_percentage(resume_text, jd_text)
         
-        # Extract keywords and skills
-        resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
-        jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
+        # Extract keywords and skills - ensure proper structure
+        resume_keywords, raw_resume_categories = extract_skills_and_keywords(resume_text)
+        jd_keywords, raw_jd_categories = extract_skills_and_keywords(jd_text)
+        
+        # Convert categories to proper DataFrame-compatible format
+        jd_categories = {}
+        resume_categories = {}
+        for category in DOMAIN_CATEGORIES:
+            jd_categories[category] = {
+                skill: score 
+                for skill, score in raw_jd_categories.get(category, {}).items()
+            }
+            resume_categories[category] = {
+                skill: score 
+                for skill, score in raw_resume_categories.get(category, {}).items()
+            }
         
         # Calculate matched and missing keywords
         matched_keywords = list(set(resume_keywords) & set(jd_keywords))
         missing_keywords = list(set(jd_keywords) - set(resume_keywords))
-        
-        # Create recommendations based on analysis
-        recommendations = []
-        
-        # Add keyword-based recommendations
-        if missing_keywords:
-            recommendations.append(f"Add missing keywords: {', '.join(missing_keywords[:3])}")
-        
-        # Add section-based recommendations
-        if not sections['Projects']:
-            recommendations.append("Add a projects section to showcase your practical experience")
-        if not sections['Achievements']:
-            recommendations.append("Include quantifiable achievements to demonstrate impact")
-        
-        # Add skill-based recommendations
-        if match_data['score'] < 70:
-            recommendations.append("Focus on developing skills that align with job requirements")
-        
-        # Add general recommendations
-        recommendations.extend([
-            "Ensure all experiences are quantified with metrics",
-            "Keep resume format ATS-friendly"
-        ])
         
         return {
             "JD Match": f"{match_data['score']}%",
@@ -578,12 +568,11 @@ def get_ats_feedback(resume_text, jd_text):
             "Experience": sections['Experience'],
             "Projects": sections['Projects'],
             "Achievements": sections['Achievements'],
-            "Key Strengths": matched_keywords[:5],
-            "Missing Keywords": missing_keywords[:5],
-            "Category Matches": match_data['category_scores'],
             "JD_Categories": jd_categories,
             "Resume_Categories": resume_categories,
-            "Recommendations": recommendations
+            "Category_Matches": match_data['category_scores'],
+            "Missing_Keywords": missing_keywords[:10],
+            "Matched_Keywords": matched_keywords[:10]
         }
         
     except Exception as e:
@@ -691,8 +680,11 @@ if st.button(" Evaluate"):
                 
                 # Skill categories visualization
                 st.markdown("#### Skill Categories Match")
-                categories = [cat for cat in ats_response['Category Matches'] if ats_response['Category Matches'][cat] > 0]
-                scores = [ats_response['Category Matches'][cat] for cat in categories]
+                categories = [
+                    cat for cat in ats_response['Category_Matches'] 
+                    if ats_response['Category_Matches'][cat] > 0
+                ]
+                scores = [ats_response['Category_Matches'][cat] for cat in categories]
                 
                 fig1 = px.bar(
                     x=categories,
@@ -710,36 +702,42 @@ if st.button(" Evaluate"):
                 st.markdown("#### Skills Breakdown")
                 
                 for category in DOMAIN_CATEGORIES:
-                    if category in ats_response['Category Matches']:
-                        with st.expander(f"{category} ({ats_response['Category Matches'][category]}%)", expanded=True):
+                    if category in ats_response['Category_Matches']:
+                        with st.expander(f"{category} ({ats_response['Category_Matches'][category]}%)", expanded=True):
                             col1, col2 = st.columns(2)
+                            
+                            # Job Description Skills
                             with col1:
                                 st.markdown("**Job Description Skills**")
                                 jd_skills = ats_response['JD_Categories'].get(category, {})
                                 if jd_skills:
-                                    st.dataframe(
-                                        pd.DataFrame.from_dict(jd_skills, orient='index', columns=['Score'])
-                                        .sort_values('Score', ascending=False)
-                                    )
+                                    df = pd.DataFrame({
+                                        'Skill': list(jd_skills.keys()),
+                                        'Score': list(jd_skills.values())
+                                    }).sort_values('Score', ascending=False)
+                                    st.dataframe(df)
                                 else:
                                     st.info("No relevant skills found in job description")
                             
+                            # Resume Skills
                             with col2:
                                 st.markdown("**Your Resume Skills**")
                                 resume_skills = ats_response['Resume_Categories'].get(category, {})
                                 if resume_skills:
-                                    st.dataframe(
-                                        pd.DataFrame.from_dict(resume_skills, orient='index', columns=['Score'])
-                                        .sort_values('Score', ascending=False)
-                                    )
+                                    df = pd.DataFrame({
+                                        'Skill': list(resume_skills.keys()),
+                                        'Score': list(resume_skills.values())
+                                    }).sort_values('Score', ascending=False)
+                                    st.dataframe(df)
                                 else:
                                     st.warning("No matching skills found in resume")
                             
                             # Skill gap analysis
-                            missing_skills = set(jd_skills.keys()) - set(resume_skills.keys())
-                            if missing_skills:
-                                st.markdown("**Recommended Skills to Add**")
-                                st.write(", ".join(sorted(missing_skills)))
+                            if jd_skills and resume_skills:
+                                missing_skills = set(jd_skills.keys()) - set(resume_skills.keys())
+                                if missing_skills:
+                                    st.markdown("**Recommended Skills to Add**")
+                                    st.write(", ".join(sorted(missing_skills)))
             
             # Tab 3: Recommendations
             with tab3:
@@ -774,9 +772,9 @@ if st.button(" Evaluate"):
                 
                 # Skill Development Recommendations
                 with st.expander("Skill Enhancement", expanded=True):
-                    if ats_response['Missing Keywords']:
+                    if ats_response['Missing_Keywords']:
                         st.error("🔍 Key Skills to Develop:")
-                        for keyword in ats_response['Missing Keywords'][:5]:
+                        for keyword in ats_response['Missing_Keywords'][:5]:
                             st.markdown(f"- {keyword}")
                         
                         st.info("📚 Recommended Learning Resources:")
@@ -801,9 +799,9 @@ if st.button(" Evaluate"):
                     """)
                 
                 # Action Items
-                if ats_response['Recommendations']:
+                if ats_response['Missing_Keywords']:
                     st.markdown("### Action Items")
-                    for i, rec in enumerate(ats_response['Recommendations'], 1):
+                    for i, rec in enumerate(ats_response['Missing_Keywords'], 1):
                         st.markdown(f"{i}. {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
