@@ -1,67 +1,5 @@
 import PyPDF2
 import streamlit as st
-st.set_page_config(
-    page_title="Verq ATS Resume Evaluator",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# Set theme configuration
-st.markdown("""
-    <style>
-        :root {
-            --primary-color: #1f497d;
-            --background-color: white;
-            --secondary-background-color: #f0f2f6;
-            --text-color: black;
-            --font: sans-serif;
-        }
-        
-        .stApp {
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
-        
-        /* Text inputs */
-        .stTextInput > div > div > input,
-        .stTextArea > div > div > textarea,
-        .stSelectbox > div > div > select,
-        .stNumberInput > div > div > input {
-            background-color: white !important;
-            color: black !important;
-        }
-        
-        /* Buttons */
-        .stButton > button {
-            background-color: var(--primary-color) !important;
-            color: white !important;
-            border: none;
-        }
-        
-        /* Sidebar */
-        .css-1d391kg {
-            background-color: var(--secondary-background-color) !important;
-        }
-        
-        /* Expanders */
-        .stExpander {
-            background-color: var(--secondary-background-color) !important;
-            border: 1px solid #ddd !important;
-        }
-        
-        /* Tabs */
-        .stTabs [data-baseweb="tab-list"] {
-            background-color: var(--secondary-background-color) !important;
-        }
-        
-        /* Cards */
-        .stMetric {
-            background-color: var(--secondary-background-color) !important;
-            border: 1px solid #ddd !important;
-        }
-    </style>
-""")
-
 import os
 import re
 import json
@@ -770,7 +708,8 @@ if st.button(" Evaluate"):
                 
                 # Projects
                 try:
-                    if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
+                    if ats_response.get('Projects') and isinstance(ats_response['Projects'], str) \
+                       and ats_response['Projects'].strip() not in ["", "No projects found"]:
                         with st.expander("Projects", expanded=False):
                             proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
                             for entry in proj_entries:
@@ -784,7 +723,8 @@ if st.button(" Evaluate"):
                 
                 # Achievements
                 try:
-                    if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
+                    if ats_response.get('Achievements') and isinstance(ats_response['Achievements'], str) \
+                       and ats_response['Achievements'].strip() not in ["", "No achievements found"]:
                         with st.expander("Achievements", expanded=False):
                             ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
                             for entry in ach_entries:
