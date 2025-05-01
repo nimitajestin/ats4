@@ -36,6 +36,16 @@ st.markdown("""
             color: black !important;
         }
         
+        /* File uploader */
+        .stFileUploader > div > div {
+            background-color: #f9f9f9 !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        .stFileUploader > div > div:hover {
+            background-color: #f0f0f0 !important;
+        }
+        
         /* Sidebar */
         [data-testid="stSidebar"] {
             background-color: var(--bg-secondary) !important;
@@ -768,8 +778,7 @@ if st.button(" Evaluate"):
                 
                 # Projects
                 try:
-                    if ats_response.get('Projects') and isinstance(ats_response['Projects'], str) \
-                       and ats_response['Projects'].strip() not in ["", "No projects found"]:
+                    if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
                         with st.expander("Projects", expanded=False):
                             proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
                             for entry in proj_entries:
@@ -783,8 +792,7 @@ if st.button(" Evaluate"):
                 
                 # Achievements
                 try:
-                    if ats_response.get('Achievements') and isinstance(ats_response['Achievements'], str) \
-                       and ats_response['Achievements'].strip() not in ["", "No achievements found"]:
+                    if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
                         with st.expander("Achievements", expanded=False):
                             ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
                             for entry in ach_entries:
