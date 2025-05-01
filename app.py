@@ -195,29 +195,27 @@ def calculate_match_percentage(resume_text, jd_text):
 
 def extract_text_from_pdf(uploaded_file):
     try:
-        # Try different PDF extraction methods for better results
         text = ""
         reader = PyPDF2.PdfReader(uploaded_file)
-        
-        # First pass: extract text with standard method
         for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                # Normalize whitespace but preserve paragraph breaks
-                page_text = re.sub(r'\s+', ' ', page_text)
-                page_text = re.sub(r'\. ', '.\n', page_text)  # Add line breaks after periods
-                text += page_text + '\n\n'
+            text += page.extract_text() + '\n'
         
-        # Enhance section headers for better detection
-        text = re.sub(r'(?i)\b(education|academic|qualification)s?\b', '\nEDUCATION\n', text)
-        text = re.sub(r'(?i)\b(experience|work history|employment|professional)\b', '\nEXPERIENCE\n', text)
-        text = re.sub(r'(?i)\b(projects?|technical projects?)\b', '\nPROJECTS\n', text)
-        text = re.sub(r'(?i)\b(achievements?|accomplishments?|awards?)\b', '\nACHIEVEMENTS\n', text)
+        # Enhanced header normalization with more variations
+        header_mappings = {
+            'education': ['academic background', 'qualifications', 'degrees'],
+            'experience': ['work history', 'employment', 'professional experience'],
+            'projects': ['technical projects', 'selected projects'],
+            'skills': ['technical skills', 'core competencies']
+        }
         
+        for standard_header, variants in header_mappings.items():
+            for variant in variants:
+                text = re.sub(rf'(?i)\b{variant}\b', f'\n{standard_header.upper()}\n', text)
+                
         return text
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-        return None
+        return ""
 
 def extract_profile_summary(text):
     """Extract a comprehensive profile summary from resume text"""
@@ -273,9 +271,21 @@ def extract_profile_summary(text):
     return ' '.join(summary_section).strip()
 
 def analyze_education(text):
-    """Enhanced education analysis with better structure and detail capture"""
-    # First look for EDUCATION section header (normalized by extract_text_from_pdf)
-    edu_pattern = re.compile(r'EDUCATION\s*\n(.*?)(?:\n\n|\n[A-Z]{3,}|$)', re.DOTALL | re.IGNORECASE)
+    """More flexible education analysis"""
+    # Flexible section header detection
+    edu_pattern = re.compile(r'(?i)(?:education|academic background|qualifications?|degrees?)\s*\n(.*?)(?:\n\n|\n[A-Z]{3,}|$)', re.DOTALL)
+    
+    # More flexible GPA/grade detection
+    grade_patterns = [
+        r'(?:gpa|grade|score|cgpa)\s*[:=]?\s*[0-9\.]+',
+        r'[0-9\.]+\s*(?:gpa|grade|score|cgpa)',
+        r'(?:first|second|third)\s*class',
+        r'(?:with|in)\s*(?:distinction|honors|merit)'
+    ]
+    
+    # More flexible date detection (supports 2-digit years and month formats)
+    date_pattern = r'(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+)?(?:\d{4}|\d{2})(?:\s*[-–—]\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+)?(?:\d{4}|\d{2}|present|current)'
+    
     edu_match = edu_pattern.search(text)
     
     if edu_match:
@@ -300,8 +310,17 @@ def analyze_education(text):
             # Include context (university name, dates, etc.)
             context_start = max(0, i-1)
             context_end = min(len(lines), i+5)  # Get a few lines after for context
-            degree_entry = '\n'.join([l.strip() for l in lines[context_start:context_end] if l.strip()])
-            education_entries.append(degree_entry)
+            
+            # Look for date patterns in nearby lines
+            has_date = False
+            for j in range(context_start, context_end):
+                if j < len(lines) and re.search(r'(20\d\d|19\d\d|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|present)', lines[j].lower()):
+                    has_date = True
+                    break
+            
+            if has_date:
+                edu_entry = '\n'.join([l.strip() for l in lines[context_start:context_end] if l.strip()])
+                education_entries.append(edu_entry)
     
     # If we found entries, join them
     if education_entries:
@@ -850,4 +869,3 @@ if st.button(" Evaluate"):
                         st.markdown(f"{i}. {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
-        
