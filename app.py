@@ -119,64 +119,6 @@ DOMAIN_CATEGORIES = {
     }
 }
 
-# Enhanced CS Resume Analysis Functions
-def extract_cs_resume_sections(resume_text):
-    """
-    Extract and categorize sections from CS resumes with high accuracy
-    Returns: dict with keys: 'education', 'experience', 'skills', 'projects', 'publications'
-    """
-    sections = {
-        'education': [],
-        'experience': [],
-        'skills': [],
-        'projects': [],
-        'publications': []
-    }
-    
-    # Enhanced patterns for CS resumes
-    edu_pattern = r'(?i)(education|academic background|degrees?)(.*?)(?=(experience|work history|projects|$))'
-    exp_pattern = r'(?i)(experience|work history|employment)(.*?)(?=(projects|skills|education|$))'
-    skills_pattern = r'(?i)(technical skills|skills|competencies)(.*?)(?=(projects|experience|education|$))'
-    projects_pattern = r'(?i)(projects|research work)(.*?)(?=(skills|experience|education|$))'
-    
-    # Extract sections using improved patterns
-    sections['education'] = re.findall(edu_pattern, resume_text, re.DOTALL)
-    sections['experience'] = re.findall(exp_pattern, resume_text, re.DOTALL)
-    sections['skills'] = re.findall(skills_pattern, resume_text, re.DOTALL)
-    sections['projects'] = re.findall(projects_pattern, resume_text, re.DOTALL)
-    
-    return sections
-
-def analyze_cs_skills(resume_text, jd_text):
-    """
-    Specialized skill analysis for computer science resumes
-    Returns: {
-        'match_percentage': float,
-        'skill_categories': dict,
-        'missing_skills': list,
-        'strong_skills': list
-    }
-    """
-    # Enhanced CS-specific skill extraction
-    resume_skills = extract_cs_resume_sections(resume_text)['skills']
-    jd_skills = extract_skills_and_keywords(jd_text)
-    
-    # Calculate matches using TF-IDF and cosine similarity
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([resume_text, jd_text])
-    match_percentage = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0] * 100
-    
-    # Get skill gaps and strengths
-    missing_skills = set(jd_skills) - set(resume_skills)
-    strong_skills = set(resume_skills) & set(jd_skills)
-    
-    return {
-        'match_percentage': round(match_percentage, 1),
-        'skill_categories': DOMAIN_CATEGORIES,
-        'missing_skills': sorted(missing_skills),
-        'strong_skills': sorted(strong_skills)
-    }
-
 def extract_skills_and_keywords(text):
     text = text.lower()
     text = re.sub(r'[^a-z0-9\s]', ' ', text)
@@ -589,61 +531,277 @@ def extract_resume_sections(text):
         'Achievements': achievements
     }
 
-# Updated Streamlit Interface for CS Resumes
+@st.cache_data 
+def get_ats_feedback(resume_text, jd_text):
+    try:
+        # Extract all sections from resume
+        sections = extract_resume_sections(resume_text)
+        
+        # Calculate match percentage and get match data
+        match_data = calculate_match_percentage(resume_text, jd_text)
+        
+        # Extract keywords and skills
+        resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
+        jd_keywords, jd_categories = extract_skills_and_keywords(jd_text)
+        
+        # Calculate matched and missing keywords
+        matched_keywords = list(set(resume_keywords) & set(jd_keywords))
+        missing_keywords = list(set(jd_keywords) - set(resume_keywords))
+        
+        # Create recommendations based on analysis
+        recommendations = []
+        
+        # Add keyword-based recommendations
+        if missing_keywords:
+            recommendations.append(f"Add missing keywords: {', '.join(missing_keywords[:3])}")
+        
+        # Add section-based recommendations
+        if not sections['Projects']:
+            recommendations.append("Add a projects section to showcase your practical experience")
+        if not sections['Achievements']:
+            recommendations.append("Include quantifiable achievements to demonstrate impact")
+        
+        # Add skill-based recommendations
+        if match_data['score'] < 70:
+            recommendations.append("Focus on developing skills that align with job requirements")
+        
+        # Add general recommendations
+        recommendations.extend([
+            "Ensure all experiences are quantified with metrics",
+            "Keep resume format ATS-friendly"
+        ])
+        
+        return {
+            "JD Match": f"{match_data['score']}%",
+            "Profile Summary": sections['Profile Summary'],
+            "Education": sections['Education'],
+            "Experience": sections['Experience'],
+            "Projects": sections['Projects'],
+            "Achievements": sections['Achievements'],
+            "Key Strengths": matched_keywords[:5],
+            "Missing Keywords": missing_keywords[:5],
+            "Category Matches": match_data['category_scores'],
+            "Recommendations": recommendations
+        }
+        
+    except Exception as e:
+        st.error(f"Error in text processing: {str(e)}")
+        return None
+
+# Streamlit App Interface
 st.markdown("""
     <div style="text-align: center;">
-        <h1 style="color: #1f497d;">CS Resume Analyzer</h1>
-        <p style="color: #666;">Precision analysis for computer science resumes</p>
+        <h1 style="color: #1f497d;">Verq ATS Resume Evaluator</h1>
+        <p>Upload your resume and job description to get instant feedback</p>
     </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-uploaded_resume = st.file_uploader("Upload Computer Science Resume (PDF)", type="pdf")
-jd_input = st.text_area("Paste Job Description", height=200)
+st.markdown("##  ATS Resume Evaluator")
+st.markdown("Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.")
 
-if st.button("Analyze Resume"):
+with st.container():
+    col1, col2 = st.columns(2)
+
+    with col1:
+        jd_input = st.text_area(" Job Description", height=300, placeholder="Paste the JD here...")
+
+    with col2:
+        uploaded_resume = st.file_uploader(" Upload Resume (PDF)", type=["pdf"])
+
+if st.button(" Evaluate"):
     if uploaded_resume and jd_input.strip():
-        with st.spinner("Performing deep analysis..."):
-            try:
-                # Extract and analyze
-                resume_text = extract_text_from_pdf(uploaded_resume)
-                if not resume_text:
-                    st.error("Failed to extract text from PDF")
-                    st.stop()
-                
-                # Get comprehensive analysis
-                analysis = analyze_cs_skills(resume_text, jd_input)
-                sections = extract_cs_resume_sections(resume_text)
-                
-                # Display results
-                st.success("Analysis Complete!")
-                
-                # Match percentage
-                st.metric("Overall Match Score", f"{analysis['match_percentage']}%")
-                
-                # Skills analysis
-                with st.expander("Skills Analysis", expanded=True):
-                    st.subheader("Skill Match by Category")
-                    for category, skills in analysis['skill_categories'].items():
-                        matched = len(set(skills['skills']) & set(analysis['strong_skills']))
-                        total = len(skills['skills'])
-                        if total > 0:
-                            percent = (matched / total) * 100
-                            st.progress(int(percent), text=f"{category}: {matched}/{total} skills")
-                
-                # Missing skills
-                if analysis['missing_skills']:
-                    with st.expander("Recommended Skills to Add", expanded=True):
-                        st.write(", ".join(analysis['missing_skills']))
-                
-                # Resume sections
-                with st.expander("Resume Breakdown", expanded=False):
-                    for section, content in sections.items():
-                        if content:
-                            st.subheader(section.title())
-                            st.write(content)
-                
-            except Exception as e:
-                st.error(f"Analysis failed: {str(e)}")
+        with st.spinner("Analyzing Resume..."):
+            # Extract text and analyze
+            resume_text = extract_text_from_pdf(uploaded_resume)
+            if not resume_text:
+                st.error("Failed to extract text from PDF")
                 st.stop()
+            
+            # Get ATS feedback
+            ats_response = get_ats_feedback(resume_text, jd_input)
+            if not ats_response:
+                st.error("Failed to generate ATS feedback")
+                st.stop()
+            
+            # Display results
+            match_pct = float(ats_response['JD Match'].strip('%'))
+            color = 'green' if match_pct >= 80 else 'orange' if match_pct >= 60 else 'red'
+            
+            st.markdown(
+                f"<h2 style='color: {color}; text-align: center;'>"
+                f"Overall Match: {match_pct:.1f}%</h2>", 
+                unsafe_allow_html=True
+            )
+            
+            # Create tabs for organized display
+            tab1, tab2, tab3 = st.tabs(["Overview", "Skills Analysis", "Recommendations"])
+            
+            # Tab 1: Overview with improved structure
+            with tab1:
+                # Profile Summary with better formatting
+                st.markdown("### Professional Profile")
+                if ats_response['Profile Summary']:
+                    st.info(ats_response['Profile Summary'])
+                else:
+                    st.warning("No profile summary found")
+                
+                # Education and Experience in columns
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("### Education")
+                    if ats_response['Education'] and ats_response['Education'] != "No education details found":
+                        for line in ats_response['Education'].split('\n'):
+                            if line.strip():
+                                st.markdown(f"- {line}")
+                    else:
+                        st.warning("No education details found")
+                
+                with col2:
+                    st.markdown("### Experience")
+                    if ats_response['Experience'] and ats_response['Experience'] != "No experience details found":
+                        for line in ats_response['Experience'].split('\n'):
+                            if line.strip():
+                                if line.startswith('  '):  # It's a responsibility/achievement
+                                    st.markdown(f"  • {line.strip()}")
+                                else:  # It's a role title
+                                    st.markdown(f"**{line}**")
+                    else:
+                        st.warning("No experience details found")
+                
+                # Projects and Achievements
+                if ats_response['Projects'] or ats_response['Achievements']:
+                    st.markdown("### Key Highlights")
+                    
+                    if ats_response['Projects']:
+                        st.markdown("#### Notable Projects")
+                        for project in ats_response['Projects']:
+                            st.markdown(f"• {project}")
+                    
+                    if ats_response['Achievements']:
+                        st.markdown("#### Key Achievements")
+                        for achievement in ats_response['Achievements']:
+                            st.markdown(f"• {achievement}")
+            
+            # Tab 2: Skills Analysis
+            with tab2:
+                st.markdown("### Skills Analysis")
+                
+                # Skill categories visualization
+                st.markdown("#### Skill Categories Match")
+                categories = [cat for cat in ats_response['Category Matches'] if ats_response['Category Matches'][cat] > 0]
+                scores = [ats_response['Category Matches'][cat] for cat in categories]
+                
+                fig1 = px.bar(
+                    x=categories,
+                    y=scores,
+                    color=scores,
+                    color_continuous_scale=["red", "orange", "green"],
+                    range_color=[0, 100],
+                    labels={"x": "Category", "y": "Match %"},
+                    height=400
+                )
+                fig1.update_layout(coloraxis_showscale=False)
+                st.plotly_chart(fig1, use_container_width=True)
+                
+                # Detailed skills breakdown
+                st.markdown("#### Skills Breakdown")
+                
+                for category in DOMAIN_CATEGORIES:
+                    if category in ats_response['Category Matches']:
+                        with st.expander(f"{category} ({ats_response['Category Matches'][category]}%)", expanded=True):
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown("**Job Description Skills**")
+                                jd_skills = ats_response['Missing Keywords']
+                                if jd_skills:
+                                    st.dataframe(
+                                        pd.DataFrame.from_dict(jd_skills, orient='index', columns=['Score'])
+                                        .sort_values('Score', ascending=False)
+                                    )
+                                else:
+                                    st.info("No relevant skills found in job description")
+                            
+                            with col2:
+                                st.markdown("**Your Resume Skills**")
+                                resume_skills = ats_response['Key Strengths']
+                                if resume_skills:
+                                    st.dataframe(
+                                        pd.DataFrame.from_dict(resume_skills, orient='index', columns=['Score'])
+                                        .sort_values('Score', ascending=False)
+                                    )
+                                else:
+                                    st.warning("No matching skills found in resume")
+                            
+                            # Skill gap analysis
+                            missing_skills = set(jd_skills.keys()) - set(resume_skills.keys())
+                            if missing_skills:
+                                st.markdown("**Recommended Skills to Add**")
+                                st.write(", ".join(sorted(missing_skills)))
+            
+            # Tab 3: Recommendations
+            with tab3:
+                st.markdown("### Personalized Recommendations")
+                
+                # Resume Structure Analysis
+                with st.expander("Resume Structure Evaluation", expanded=True):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        if ats_response['Projects']:
+                            st.success("✔ Strong projects section")
+                            st.markdown(f"• {len(ats_response['Projects'])} relevant projects listed")
+                        else:
+                            st.error("✘ Missing projects section")
+                    
+                    with col2:
+                        if ats_response['Achievements']:
+                            st.success("✔ Achievements well highlighted")
+                            st.markdown(f"• {len(ats_response['Achievements'])} quantifiable achievements")
+                        else:
+                            st.error("✘ Missing achievements section")
+                    
+                    st.info("💡 Structure Improvement Tips:")
+                    st.markdown("""
+                    - **Bullet points**: Use for readability (3-5 per section)
+                    - **Length**: Keep to 1-2 pages maximum
+                    - **Action verbs**: Use strong verbs (developed, optimized, led)
+                    - **Metrics**: Quantify achievements (e.g., "Improved performance by 30%")
+                    - **White space**: Ensure proper spacing between sections
+                    """)
+                
+                # Skill Development Recommendations
+                with st.expander("Skill Enhancement", expanded=True):
+                    if ats_response['Missing Keywords']:
+                        st.error("🔍 Key Skills to Develop:")
+                        for keyword in ats_response['Missing Keywords'][:5]:
+                            st.markdown(f"- {keyword}")
+                        
+                        st.info("📚 Recommended Learning Resources:")
+                        st.markdown("""
+                        - [FreeCodeCamp](https://www.freecodecamp.org/) - Free coding tutorials
+                        - [Coursera](https://www.coursera.org/) - Professional certificates  
+                        - [Udemy](https://www.udemy.com/) - Affordable courses
+                        - [LinkedIn Learning](https://www.linkedin.com/learning/) - Career-focused skills
+                        """)
+                    else:
+                        st.success("🎯 Excellent skill match with job requirements!")
+                
+                # ATS Optimization Tips
+                with st.expander("ATS Optimization Tips", expanded=True):
+                    st.markdown("""
+                    **To improve your ATS score:**
+                    - Include missing keywords naturally in your resume
+                    - Match job title/headline with the position
+                    - Use standard section headings (Experience, Education)
+                    - Avoid graphics/tables that scanners can't read
+                    - Save as .docx or .pdf (avoid images/scanned PDFs)
+                    """)
+                
+                # Action Items
+                if ats_response['Recommendations']:
+                    st.markdown("### Action Items")
+                    for i, rec in enumerate(ats_response['Recommendations'], 1):
+                        st.markdown(f"{i}. {rec}")
     else:
-        st.warning("Please upload a resume and enter a job description")
+        st.warning("Please upload a resume and enter a job description.")
