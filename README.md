@@ -1,69 +1,63 @@
-# Resume ATS Tracking System
+# Verq ATS Resume Analyzer
 
-A modern ATS (Applicant Tracking System) built with Python that helps evaluate resumes against job descriptions using advanced NLP techniques.
+A modern Applicant Tracking System (ATS) compliance checker that evaluates resumes against job descriptions using:
+- TF-IDF vectorization
+- Cosine similarity
+- Domain-specific skill categorization
+- NLP-powered text analysis
 
-## Features
 
-- **Job Description Match:** 
-  - Evaluates resume-job description compatibility
-  - Provides percentage match scores
-  - Category-wise skill analysis
-  - Smart recommendations based on matches
+## Key Features
 
-- **Skills Analysis:**
-  - Identifies technical skills, frameworks, and technologies
-  - Categorizes skills by domain (Programming, Web, Database, etc.)
-  - Highlights missing critical skills
-  - Shows strengths and areas for improvement
+### Smart Resume Analysis
+- Automatic section detection (Education, Experience, Skills)
+- PDF text extraction with layout preservation
+- Context-aware skill scoring
+- Multi-domain categorization (Programming, Data Science, etc.)
 
-- **Smart Recommendations:**
-  - Personalized feedback based on profile analysis
-  - Suggestions for skill improvements
-  - Format and content optimization tips
-  - Industry-standard best practices
+### Advanced Matching
+- Weighted scoring system (critical vs optional skills)
+- Semantic similarity for synonymous terms
+- Color-coded match indicators (Green ≥80%, Orange ≥60%, Red <60%)
 
-- **Education & Experience Analysis:**
-  - Detects educational qualifications
-  - Analyzes work experience
-  - Identifies projects and achievements
-  - Provides context-aware suggestions
-
-## Requirements
-- Python 3.10+
-- Streamlit
-- NLTK
-- Other dependencies listed in requirements.txt
+### Technical Highlights
+- Streamlit-based interactive UI
+- NLTK for NLP processing
+- Custom domain knowledge bases
+- Extensible scoring algorithms
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/nimitajestin/ats-resume-analyzer.git
-cd ats-resume-analyzer
-```
+### Prerequisites
+- Python 3.10+
+- Pip package manager
 
-2. Install dependencies:
+### Quick Start
 ```bash
+# Clone repository
+git clone https://github.com/nimitajestin/ats4.git
+cd ats4
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-3. Run the application:
-```bash
+# Launch application
 streamlit run app.py
 ```
 
-## Usage
+## Usage Guide
 
-1. Upload your resume (PDF format)
-2. Enter or paste the job description
-3. Click "Analyze" to get:
-   - Match percentage
-   - Skills analysis
-   - Missing keywords
-   - Personalized recommendations
+1. **Upload Resume**
+   - PDF format recommended
+   - Standard chronological format works best
 
-## Contributing
-Feel free to open issues and pull requests for any improvements.
+2. **Enter Job Description**
+   - Paste full job description text
+   - Minimum 50 words for accurate analysis
 
-## License
-MIT License
+3. **Review Analysis**
+   - Match percentage with breakdown
+   - Skills gap analysis
+   - Personalized improvement suggestions
+
+
