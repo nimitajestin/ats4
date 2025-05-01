@@ -65,7 +65,7 @@ st.markdown("""
         
         /* Upload box text */
         [data-testid="stFileUploader"] p {
-            color: #4361ee !important;
+            color: white !important;
         }
         
         /* Browse files button */
