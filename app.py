@@ -563,6 +563,14 @@ def get_ats_feedback(resume_text, jd_text):
         return None
 
 # Streamlit App Interface
+st.set_page_config(page_title="Verq ATS Resume Evaluator", layout="wide")
+st.markdown("""
+    <style>
+        .stApp {
+            background-color: white;
+        }
+    </style>
+""")
 st.markdown("""
     <div style="text-align: center;">
         <h1 style="color: #1f497d;">Verq ATS Resume Evaluator</h1>
@@ -850,4 +858,3 @@ if st.button(" Evaluate"):
                         st.markdown(f"{i}. {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
-        
