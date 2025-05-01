@@ -581,6 +581,8 @@ def get_ats_feedback(resume_text, jd_text):
             "Key Strengths": matched_keywords[:5],
             "Missing Keywords": missing_keywords[:5],
             "Category Matches": match_data['category_scores'],
+            "JD_Categories": jd_categories,
+            "Resume_Categories": resume_categories,
             "Recommendations": recommendations
         }
         
@@ -713,7 +715,7 @@ if st.button(" Evaluate"):
                             col1, col2 = st.columns(2)
                             with col1:
                                 st.markdown("**Job Description Skills**")
-                                jd_skills = ats_response['Missing Keywords']
+                                jd_skills = ats_response['JD_Categories'].get(category, {})
                                 if jd_skills:
                                     st.dataframe(
                                         pd.DataFrame.from_dict(jd_skills, orient='index', columns=['Score'])
@@ -724,7 +726,7 @@ if st.button(" Evaluate"):
                             
                             with col2:
                                 st.markdown("**Your Resume Skills**")
-                                resume_skills = ats_response['Key Strengths']
+                                resume_skills = ats_response['Resume_Categories'].get(category, {})
                                 if resume_skills:
                                     st.dataframe(
                                         pd.DataFrame.from_dict(resume_skills, orient='index', columns=['Score'])
