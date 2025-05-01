@@ -140,59 +140,12 @@ def extract_cs_resume_sections(resume_text):
     projects_pattern = r'(?i)(projects|research work)(.*?)(?=(skills|experience|education|$))'
     
     # Extract sections using improved patterns
-    try:
-        sections['education'] = re.findall(edu_pattern, resume_text, re.DOTALL)
-        sections['experience'] = re.findall(exp_pattern, resume_text, re.DOTALL)
-        sections['skills'] = re.findall(skills_pattern, resume_text, re.DOTALL)
-        sections['projects'] = re.findall(projects_pattern, resume_text, re.DOTALL)
-    except Exception as e:
-        st.error(f"Section extraction error: {str(e)}")
+    sections['education'] = re.findall(edu_pattern, resume_text, re.DOTALL)
+    sections['experience'] = re.findall(exp_pattern, resume_text, re.DOTALL)
+    sections['skills'] = re.findall(skills_pattern, resume_text, re.DOTALL)
+    sections['projects'] = re.findall(projects_pattern, resume_text, re.DOTALL)
     
     return sections
-
-def analyze_cs_resume(resume_text, jd_text):
-    """
-    Comprehensive CS resume analysis
-    Returns: {
-        'match_score': float,
-        'section_analysis': dict,
-        'skill_analysis': dict,
-        'recommendations': list
-    }
-    """
-    analysis = {
-        'match_score': 0,
-        'section_analysis': {},
-        'skill_analysis': {},
-        'recommendations': []
-    }
-    
-    try:
-        # Section analysis
-        sections = extract_cs_resume_sections(resume_text)
-        analysis['section_analysis'] = sections
-        
-        # Skill matching
-        skill_result = analyze_cs_skills(resume_text, jd_text)
-        analysis['skill_analysis'] = skill_result
-        analysis['match_score'] = skill_result['match_percentage']
-        
-        # Generate recommendations
-        if skill_result['missing_skills']:
-            analysis['recommendations'].append(
-                f"Add these skills: {', '.join(skill_result['missing_skills'][:5])}"
-            )
-        
-        if not sections['projects']:
-            analysis['recommendations'].append("Add a projects section")
-            
-        if analysis['match_score'] < 70:
-            analysis['recommendations'].append("Strengthen alignment with job requirements")
-        
-    except Exception as e:
-        st.error(f"Analysis error: {str(e)}")
-    
-    return analysis
 
 def analyze_cs_skills(resume_text, jd_text):
     """
@@ -658,41 +611,36 @@ if st.button("Analyze Resume"):
                     st.stop()
                 
                 # Get comprehensive analysis
-                analysis = analyze_cs_resume(resume_text, jd_input)
-                sections = extract_resume_sections(resume_text)
+                analysis = analyze_cs_skills(resume_text, jd_input)
+                sections = extract_cs_resume_sections(resume_text)
                 
                 # Display results
                 st.success("Analysis Complete!")
                 
                 # Match percentage
-                st.metric("Overall Match Score", f"{analysis['match_score']}%")
+                st.metric("Overall Match Score", f"{analysis['match_percentage']}%")
                 
-                # Section analysis
-                with st.expander("Resume Section Analysis", expanded=True):
-                    for section, content in sections.items():
-                        if content:
-                            st.subheader(section.title())
-                            st.write(content)
-                
-                # Skill matching
-                with st.expander("Skill Matching", expanded=True):
+                # Skills analysis
+                with st.expander("Skills Analysis", expanded=True):
                     st.subheader("Skill Match by Category")
-                    for category, skills in analysis['skill_analysis']['skill_categories'].items():
-                        matched = len(set(skills['skills']) & set(analysis['skill_analysis']['strong_skills']))
+                    for category, skills in analysis['skill_categories'].items():
+                        matched = len(set(skills['skills']) & set(analysis['strong_skills']))
                         total = len(skills['skills'])
                         if total > 0:
                             percent = (matched / total) * 100
                             st.progress(int(percent), text=f"{category}: {matched}/{total} skills")
                 
                 # Missing skills
-                if analysis['skill_analysis']['missing_skills']:
+                if analysis['missing_skills']:
                     with st.expander("Recommended Skills to Add", expanded=True):
-                        st.write(", ".join(analysis['skill_analysis']['missing_skills']))
+                        st.write(", ".join(analysis['missing_skills']))
                 
-                # Recommendations
-                if analysis['recommendations']:
-                    with st.expander("Recommendations", expanded=True):
-                        st.write("\n".join(analysis['recommendations']))
+                # Resume sections
+                with st.expander("Resume Breakdown", expanded=False):
+                    for section, content in sections.items():
+                        if content:
+                            st.subheader(section.title())
+                            st.write(content)
                 
             except Exception as e:
                 st.error(f"Analysis failed: {str(e)}")
