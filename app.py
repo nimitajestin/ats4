@@ -629,50 +629,97 @@ if st.button(" Evaluate"):
             
             # Tab 1: Overview with improved structure
             with tab1:
-                # Profile Summary with better formatting
-                st.markdown("### Professional Profile")
-                if ats_response['Profile Summary']:
-                    st.info(ats_response['Profile Summary'])
-                else:
-                    st.warning("No profile summary found")
+                st.markdown("### Overview")
                 
-                # Education and Experience in columns
-                col1, col2 = st.columns(2)
-                
+                # Match Score Card
+                col1, col2 = st.columns([1,3])
                 with col1:
-                    st.markdown("### Education")
-                    if ats_response['Education'] and ats_response['Education'] != "No education details found":
-                        for line in ats_response['Education'].split('\n'):
-                            if line.strip():
-                                st.markdown(f"- {line}")
-                    else:
-                        st.warning("No education details found")
-                
+                    st.metric("Match Score", ats_response['JD Match'])
                 with col2:
-                    st.markdown("### Experience")
-                    if ats_response['Experience'] and ats_response['Experience'] != "No experience details found":
-                        for line in ats_response['Experience'].split('\n'):
-                            if line.strip():
-                                if line.startswith('  '):  # It's a responsibility/achievement
-                                    st.markdown(f"  • {line.strip()}")
-                                else:  # It's a role title
-                                    st.markdown(f"**{line}**")
+                    score = float(ats_response['JD Match'].rstrip('%'))
+                    if score >= 80:
+                        st.success("Excellent match! Your resume strongly aligns with the job requirements.")
+                    elif score >= 60:
+                        st.warning("Good match. Consider adding a few more relevant skills.")
                     else:
-                        st.warning("No experience details found")
+                        st.error("Needs improvement. Review the recommendations tab for specific enhancements.")
                 
-                # Projects and Achievements
-                if ats_response['Projects'] or ats_response['Achievements']:
-                    st.markdown("### Key Highlights")
-                    
-                    if ats_response['Projects']:
-                        st.markdown("#### Notable Projects")
-                        for project in ats_response['Projects']:
-                            st.markdown(f"• {project}")
-                    
-                    if ats_response['Achievements']:
-                        st.markdown("#### Key Achievements")
-                        for achievement in ats_response['Achievements']:
-                            st.markdown(f"• {achievement}")
+                st.divider()
+                
+                # Profile Summary
+                if ats_response['Profile Summary'] and ats_response['Profile Summary'] != "No profile summary found":
+                    with st.expander("Profile Summary", expanded=True):
+                        st.write(ats_response['Profile Summary'])
+                else:
+                    st.warning("No profile summary found in resume")
+                
+                # Education
+                if ats_response['Education'] and ats_response['Education'] != "No education details found":
+                    with st.expander("Education", expanded=True):
+                        # Parse education entries
+                        edu_entries = [entry.strip() for entry in ats_response['Education'].split('\n\n') if entry.strip()]
+                        for entry in edu_entries:
+                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                            if lines:
+                                st.markdown(f"**{lines[0]}**")  # Degree/Institution
+                                for detail in lines[1:]:
+                                    st.markdown(f"- {detail}")  # Dates/GPA/Details
+                else:
+                    st.warning("No education section found in resume")
+                
+                # Experience
+                if ats_response['Experience'] and ats_response['Experience'] != "No experience details found":
+                    with st.expander("Experience", expanded=True):
+                        # Split into individual experience entries
+                        exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
+                        
+                        for entry in exp_entries:
+                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                            if not lines:
+                                continue
+                                
+                            # First line is position/company
+                            st.markdown(f"**{lines[0]}**")
+                            
+                            # Second line typically contains dates/location
+                            if len(lines) > 1 and any(char.isdigit() for char in lines[1]):
+                                st.markdown(f"*{lines[1]}*")
+                                bullet_start = 2
+                            else:
+                                bullet_start = 1
+                            
+                            # Handle bullet points (may be prefixed with • or -)
+                            for line in lines[bullet_start:]:
+                                # Clean bullet points and ensure consistent formatting
+                                clean_line = line.replace('•', '').replace('-', '').strip()
+                                if clean_line:
+                                    st.markdown(f"- {clean_line}")
+                else:
+                    st.warning("No experience section found in resume")
+                
+                # Projects
+                if ats_response['Projects']:
+                    with st.expander("Projects", expanded=False):
+                        # Parse project entries
+                        proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
+                        for entry in proj_entries:
+                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                            if lines:
+                                st.markdown(f"**{lines[0]}**")  # Project name
+                                for detail in lines[1:]:
+                                    st.markdown(f"- {detail}")  # Project details
+                
+                # Achievements
+                if ats_response['Achievements']:
+                    with st.expander("Achievements", expanded=False):
+                        # Parse achievement entries
+                        ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
+                        for entry in ach_entries:
+                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                            if lines:
+                                st.markdown(f"- **{lines[0]}**")  # Achievement title
+                                for detail in lines[1:]:
+                                    st.markdown(f"  - {detail}")  # Achievement details
             
             # Tab 2: Skills Analysis
             with tab2:
@@ -744,7 +791,7 @@ if st.button(" Evaluate"):
                         else:
                             st.error("✘ Missing achievements section")
                     
-                    st.info("💡 Structure Improvement Tips:")
+                    st.info(" Structure Improvement Tips:")
                     st.markdown("""
                     - **Bullet points**: Use for readability (3-5 per section)
                     - **Length**: Keep to 1-2 pages maximum
@@ -756,11 +803,11 @@ if st.button(" Evaluate"):
                 # Skill Development Recommendations
                 with st.expander("Skill Enhancement", expanded=True):
                     if ats_response['Missing_Keywords']:
-                        st.error("🔍 Key Skills to Develop:")
+                        st.error(" Key Skills to Develop:")
                         for keyword in ats_response['Missing_Keywords'][:5]:
                             st.markdown(f"- {keyword}")
                         
-                        st.info("📚 Recommended Learning Resources:")
+                        st.info(" Recommended Learning Resources:")
                         st.markdown("""
                         - [FreeCodeCamp](https://www.freecodecamp.org/) - Free coding tutorials
                         - [Coursera](https://www.coursera.org/) - Professional certificates  
@@ -768,7 +815,7 @@ if st.button(" Evaluate"):
                         - [LinkedIn Learning](https://www.linkedin.com/learning/) - Career-focused skills
                         """)
                     else:
-                        st.success("🎯 Excellent skill match with job requirements!")
+                        st.success(" Excellent skill match with job requirements!")
                 
                 # ATS Optimization Tips
                 with st.expander("ATS Optimization Tips", expanded=True):
