@@ -34,13 +34,25 @@ st.markdown("""
         
         /* File uploader */
         .stFileUploader > div > div {
-            background-color: #f9f9f9 !important;
+            background-color: white !important;
             border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
+            color: black !important;
         }
         
         .stFileUploader > div > div:hover {
-            background-color: #f0f0f0 !important;
+            background-color: #f5f5f5 !important;
+        }
+        
+        .stFileUploader > div > label {
+            color: black !important;
+        }
+        
+        .stFileUploader > div > div > div {
+            color: black !important;
+        }
+        
+        .stFileUploader > div > div > svg {
+            fill: black !important;
         }
         
         /* Sidebar */
