@@ -36,7 +36,7 @@ st.markdown("""
         .stSelectbox > div > div > select,
         .stNumberInput > div > div > input {
             background-color: white !important;
-            color: var(--text-primary) !important;
+            color: black !important;
         }
         
         /* File uploader - comprehensive targeting */
@@ -677,21 +677,23 @@ def get_ats_feedback(resume_text, jd_text):
 st.markdown("""
     <div style="text-align: center;">
         <h1 style="color: #4361ee;">Verq ATS Resume Evaluator</h1>
-        <p>Upload your resume and job description to get instant feedback</p>
+        <h5>Upload your resume and job description to get instant feedback</h5>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("##  ATS Resume Evaluator")
-st.markdown("Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.")
+st.markdown("<h5>Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</h5>", unsafe_allow_html=True)
 
 with st.container():
     col1, col2 = st.columns(2)
 
     with col1:
-        jd_input = st.text_area(" Job Description", height=300, placeholder="Paste the JD here...")
+        st.markdown("<h6>Job Description</h6>", unsafe_allow_html=True)
+        jd_input = st.text_area("", height=300, placeholder="Paste the JD here...")
 
     with col2:
-        uploaded_resume = st.file_uploader(" Upload Resume (PDF)", type=["pdf"])
+        st.markdown("<h6>Upload Resume (PDF)</h6>", unsafe_allow_html=True)
+        uploaded_resume = st.file_uploader("", type=["pdf"])
 
 if st.button(" Evaluate"):
     if uploaded_resume and jd_input.strip():
