@@ -30,6 +30,12 @@ st.markdown("""
             color: var(--text-primary) !important;
         }
         
+        /* Specific rule for subtitle */
+        .stMarkdown p {
+            color: black !important;
+            font-size: 1.2rem;
+        }
+        
         /* All text inputs */
         .stTextInput > div > div > input,
         .stTextArea > div > div > textarea,
@@ -113,6 +119,11 @@ st.markdown("""
             color: black !important;
         }
         .stButton>button {
+            color: white !important;
+        }
+        
+        /* Evaluate button text */
+        div.stButton > button > div > p {
             color: white !important;
         }
     </style>
@@ -693,7 +704,7 @@ st.markdown("""
 
     <div style="text-align: center;">
         <h1 style="color: #4361ee; font-size: 2.5rem;">Verq ATS Resume Evaluator</h1>
-        <p style="font-size: 1.2rem; color: black;">Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</p>
+        <p>Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</p>
     </div>
 """, unsafe_allow_html=True)
 
