@@ -647,14 +647,14 @@ if st.button(" Evaluate"):
                 st.divider()
                 
                 # Profile Summary
-                if ats_response['Profile Summary'] and ats_response['Profile Summary'] != "No profile summary found":
+                if ats_response.get('Profile Summary') and ats_response['Profile Summary'] and ats_response['Profile Summary'] != "No profile summary found":
                     with st.expander("Profile Summary", expanded=True):
                         st.write(ats_response['Profile Summary'])
                 else:
                     st.warning("No profile summary found in resume")
                 
                 # Education
-                if ats_response['Education'] and ats_response['Education'] != "No education details found":
+                if ats_response.get('Education') and ats_response['Education'] and ats_response['Education'] != "No education details found":
                     with st.expander("Education", expanded=True):
                         # Parse education entries
                         edu_entries = [entry.strip() for entry in ats_response['Education'].split('\n\n') if entry.strip()]
@@ -668,7 +668,7 @@ if st.button(" Evaluate"):
                     st.warning("No education section found in resume")
                 
                 # Experience
-                if ats_response['Experience'] and ats_response['Experience'] != "No experience details found":
+                if ats_response.get('Experience') and ats_response['Experience'] and ats_response['Experience'] != "No experience details found":
                     with st.expander("Experience", expanded=True):
                         # Parse experience entries
                         exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
@@ -684,28 +684,26 @@ if st.button(" Evaluate"):
                     st.warning("No experience section found in resume")
                 
                 # Projects
-                if ats_response['Projects'] and ats_response['Projects'] != "No projects found":
+                if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
                     with st.expander("Projects", expanded=False):
-                        # Parse project entries
                         proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
                         for entry in proj_entries:
                             lines = [line.strip() for line in entry.split('\n') if line.strip()]
                             if lines:
-                                st.markdown(f"**{lines[0]}**")  # Project name
+                                st.markdown(f"**{lines[0]}**")
                                 for detail in lines[1:]:
-                                    st.markdown(f"- {detail}")  # Project details
+                                    st.markdown(f"- {detail}")
                 
                 # Achievements
-                if ats_response['Achievements'] and ats_response['Achievements'] != "No achievements found":
+                if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
                     with st.expander("Achievements", expanded=False):
-                        # Parse achievement entries
                         ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
                         for entry in ach_entries:
                             lines = [line.strip() for line in entry.split('\n') if line.strip()]
                             if lines:
-                                st.markdown(f"- **{lines[0]}**")  # Achievement title
+                                st.markdown(f"- **{lines[0]}**")
                                 for detail in lines[1:]:
-                                    st.markdown(f"  - {detail}")  # Achievement details
+                                    st.markdown(f"  - {detail}")
             
             # Tab 2: Skills Analysis
             with tab2:
@@ -764,14 +762,14 @@ if st.button(" Evaluate"):
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        if ats_response['Projects']:
+                        if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
                             st.success("✔ Strong projects section")
                             st.markdown(f"• {len(ats_response['Projects'])} relevant projects listed")
                         else:
                             st.error("✘ Missing projects section")
                     
                     with col2:
-                        if ats_response['Achievements']:
+                        if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
                             st.success("✔ Achievements well highlighted")
                             st.markdown(f"• {len(ats_response['Achievements'])} quantifiable achievements")
                         else:
@@ -788,7 +786,7 @@ if st.button(" Evaluate"):
                 
                 # Skill Development Recommendations
                 with st.expander("Skill Enhancement", expanded=True):
-                    if ats_response['Missing_Keywords']:
+                    if ats_response.get('Missing_Keywords') and ats_response['Missing_Keywords']:
                         st.error(" Key Skills to Develop:")
                         for keyword in ats_response['Missing_Keywords'][:5]:
                             st.markdown(f"- {keyword}")
@@ -815,7 +813,7 @@ if st.button(" Evaluate"):
                     """)
                 
                 # Action Items
-                if ats_response['Missing_Keywords']:
+                if ats_response.get('Missing_Keywords') and ats_response['Missing_Keywords']:
                     st.markdown("### Action Items")
                     for i, rec in enumerate(ats_response['Missing_Keywords'], 1):
                         st.markdown(f"{i}. {rec}")
