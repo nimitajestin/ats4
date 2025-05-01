@@ -662,89 +662,89 @@ if st.button(" Evaluate"):
                     if ats_response.get('Education') and isinstance(ats_response['Education'], str) \
                        and ats_response['Education'].strip() not in ["", "No education details found"]:
                         with st.expander("Education", expanded=True):
-                            edu_entries = [entry.strip() for entry in ats_response['Education'].split('\n\n') if entry.strip()]
-                            for entry in edu_entries:
-                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                if lines:
-                                    st.markdown(f"**{lines[0]}**")
-                                    for detail in lines[1:]:
-                                        st.markdown(f"- {detail}")
+                            edu_text = ats_response['Education']
+                            
+                            # Handle common CS education patterns
+                            if 'Degree' in edu_text or 'University' in edu_text or 'GPA' in edu_text:
+                                entries = [e.strip() for e in re.split(r'\n\n|•|-', edu_text) if e.strip()]
+                                for entry in entries:
+                                    lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                    if lines:
+                                        st.markdown(f"**{lines[0]}**")
+                                        for detail in lines[1:]:
+                                            if any(word in detail.lower() for word in ['gpa', 'grade', 'score']):
+                                                st.markdown(f"📊 *{detail}*")
+                                            elif any(word in detail.lower() for word in ['university', 'college', 'institute']):
+                                                st.markdown(f"🏛️ {detail}")
+                                            else:
+                                                st.markdown(f"- {detail}")
                     else:
-                        st.warning("No education section found in resume")
+                        st.warning("We couldn't detect your education details. For CS resumes, please ensure:")
+                        st.markdown("""
+                        - Your education section includes your degree (e.g., 'B.Tech Computer Science')
+                        - University name is clearly listed
+                        - Dates or expected graduation are included
+                        """)
                 except Exception as e:
-                    st.error(f"Error displaying education: {str(e)}")
+                    st.error("Error processing education section. Please check your education formatting.")
                 
                 # Experience
                 try:
                     if ats_response.get('Experience') and isinstance(ats_response['Experience'], str) \
                        and ats_response['Experience'].strip() not in ["", "No experience details found"]:
                         with st.expander("Experience", expanded=True):
-                            # Enhanced parsing for different resume formats
-                            exp_entries = []
+                            exp_text = ats_response['Experience']
                             
-                            # Handle both double newline and bullet point separated entries
-                            if '\n\n' in ats_response['Experience']:
-                                exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
-                            elif '•' in ats_response['Experience']:
-                                exp_entries = [entry.strip() for entry in ats_response['Experience'].split('•') if entry.strip()]
+                            # Enhanced parsing for technical experience
+                            entries = []
+                            if '\n\n' in exp_text:
+                                entries = [e.strip() for e in exp_text.split('\n\n') if e.strip()]
+                            elif '•' in exp_text:
+                                entries = [e.strip() for e in exp_text.split('•') if e.strip()]
+                            elif '-' in exp_text:
+                                entries = [e.strip() for e in exp_text.split('-') if e.strip()]
                             else:
-                                exp_entries = [ats_response['Experience']]
+                                entries = [exp_text]
                             
-                            for entry in exp_entries:
+                            for entry in entries:
                                 lines = [line.strip() for line in entry.split('\n') if line.strip()]
                                 if lines:
-                                    # Position/Company
-                                    st.markdown(f"**{lines[0]}**")
-                                    
-                                    # Dates/Location (if present)
-                                    if len(lines) > 1 and (any(char.isdigit() for char in lines[1]) or ',' in lines[1]):
-                                        st.markdown(f"*{lines[1]}*")
-                                        bullet_start = 2
+                                    # Position/Company with tech role detection
+                                    role = lines[0]
+                                    if any(word.lower() in role.lower() for word in ['engineer', 'developer', 'analyst', 'scientist', 'intern']):
+                                        st.markdown(f"👨‍💻 **{role}**")
                                     else:
-                                        bullet_start = 1
+                                        st.markdown(f"**{role}**")
                                     
-                                    # Responsibilities/Achievements
-                                    for line in lines[bullet_start:]:
-                                        clean_line = line.replace('•', '').replace('-', '').strip()
+                                    # Dates/Location with tech term detection
+                                    if len(lines) > 1:
+                                        date_line = lines[1]
+                                        if any(word.lower() in date_line.lower() for word in ['present', 'remote', 'hybrid']):
+                                            st.markdown(f"📅 *{date_line}*")
+                                        elif any(char.isdigit() for char in date_line):
+                                            st.markdown(f"*{date_line}*")
+                                        
+                                    # Bullet points with tech keyword highlighting
+                                    for line in lines[2:]:
+                                        clean_line = re.sub(r'[•-]', '', line).strip()
                                         if clean_line:
-                                            st.markdown(f"- {clean_line}")
+                                            if any(word.lower() in clean_line.lower() for word in 
+                                                  ['python', 'java', 'c++', 'algorithm', 'database', 'api', 'cloud']):
+                                                st.markdown(f"- 💻 {clean_line}")
+                                            elif any(word.lower() in clean_line.lower() for word in 
+                                                    ['lead', 'manage', 'team']):
+                                                st.markdown(f"- 👥 {clean_line}")
+                                            else:
+                                                st.markdown(f"- {clean_line}")
                     else:
-                        st.warning("We couldn't find a clearly formatted experience section. Please check:")
+                        st.warning("We couldn't detect your experience details. For CS resumes, please ensure:")
                         st.markdown("""
-                        - Your resume has an 'Experience' or 'Work History' section
-                        - Each position is clearly separated
+                        - Each position has a clear title (e.g., 'Software Engineer Intern')
+                        - Technical skills and achievements are bulleted
                         - Dates are included for each role
                         """)
                 except Exception as e:
-                    st.error(f"Error processing experience section. Please ensure your experience is properly formatted.")
-                
-                # Projects
-                try:
-                    if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
-                        with st.expander("Projects", expanded=False):
-                            proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
-                            for entry in proj_entries:
-                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                if lines:
-                                    st.markdown(f"**{lines[0]}**")
-                                    for detail in lines[1:]:
-                                        st.markdown(f"- {detail}")
-                except Exception as e:
-                    st.error(f"Error displaying projects: {str(e)}")
-                
-                # Achievements
-                try:
-                    if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
-                        with st.expander("Achievements", expanded=False):
-                            ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
-                            for entry in ach_entries:
-                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                if lines:
-                                    st.markdown(f"- **{lines[0]}**")
-                                    for detail in lines[1:]:
-                                        st.markdown(f"  - {detail}")
-                except Exception as e:
-                    st.error(f"Error displaying achievements: {str(e)}")
+                    st.error("Error processing experience section. Please check your experience formatting.")
             
             # Tab 2: Skills Analysis
             with tab2:
