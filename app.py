@@ -658,11 +658,11 @@ if st.button(" Evaluate"):
                                     # Process remaining lines with special formatting
                                     for detail in lines[1:]:
                                         if any(word in detail.lower() for word in ['gpa', 'grade', 'score']):
-                                            st.markdown(f"📊 *{detail}*")
+                                            st.markdown(f" *{detail}*")
                                         elif any(word in detail.lower() for word in ['university', 'college', 'institute', 'school']):
-                                            st.markdown(f"🏛️ {detail}")
+                                            st.markdown(f" {detail}")
                                         elif re.search(r'\b(20\d\d|\d{4})\b', detail):
-                                            st.markdown(f"📅 *{detail}*")
+                                            st.markdown(f" *{detail}*")
                                         else:
                                             st.markdown(f"- {detail}")
                     else:
