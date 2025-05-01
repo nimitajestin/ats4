@@ -198,11 +198,12 @@ def extract_text_from_pdf(uploaded_file):
         text = ""
         reader = PyPDF2.PdfReader(uploaded_file)
         for page in reader.pages:
-            text += page.extract_text() + '\n'
-        return text
+            page_text = page.extract_text() or ""
+            text += page_text + "\n\n"
+        return text.strip()
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-        return None
+        return ""
 
 def extract_profile_summary(text):
     """Extract a comprehensive profile summary from resume text"""
@@ -505,31 +506,26 @@ def analyze_achievements(text):
 
 def extract_resume_sections(text):
     """Extract resume sections with improved structure and detail"""
+    sections = {'Profile Summary': '', 'Education': '', 'Experience': '', 'Projects': [], 'Achievements': []}
     if not text:
-        return {
-            'Profile Summary': '',
-            'Education': '',
-            'Experience': '',
-            'Projects': [],
-            'Achievements': []
-        }
-    
-    # Extract profile summary first
-    profile_summary = extract_profile_summary(text)
-    
-    # Extract other sections
-    education = analyze_education(text)
-    experience = analyze_experience(text)
-    projects = analyze_projects(text)
-    achievements = analyze_achievements(text)
-    
-    return {
-        'Profile Summary': profile_summary,
-        'Education': education,
-        'Experience': experience,
-        'Projects': projects,
-        'Achievements': achievements
-    }
+        return sections
+    # Profile summary
+    sections['Profile Summary'] = extract_profile_summary(text)
+    # Locate section headers and split raw sections
+    pattern = re.compile(r'(?m)^(Education|Experience|Projects|Achievements)\s*$', flags=re.IGNORECASE)
+    matches = list(pattern.finditer(text))
+    for idx, m in enumerate(matches):
+        header = m.group(1).title()
+        start = m.end()
+        end = matches[idx+1].start() if idx+1 < len(matches) else len(text)
+        content = text[start:end].strip()
+        if header in ['Education', 'Experience']:
+            sections[header] = content
+        elif header == 'Projects':
+            sections['Projects'] = [e.strip() for e in content.split('\n\n') if e.strip()]
+        elif header == 'Achievements':
+            sections['Achievements'] = [e.strip() for e in content.split('\n\n') if e.strip()]
+    return sections
 
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
@@ -694,34 +690,20 @@ if st.button(" Evaluate"):
                     st.error(f"Error displaying experience: {str(e)}")
                 
                 # Projects
-                try:
-                    if ats_response.get('Projects') and isinstance(ats_response['Projects'], str) \
-                       and ats_response['Projects'].strip() not in ["", "No projects found"]:
-                        with st.expander("Projects", expanded=False):
-                            proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
-                            for entry in proj_entries:
-                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                if lines:
-                                    st.markdown(f"**{lines[0]}**")
-                                    for detail in lines[1:]:
-                                        st.markdown(f"- {detail}")
-                except Exception as e:
-                    st.error(f"Error displaying projects: {str(e)}")
-                
+                if ats_response['Projects']:
+                    with st.expander("Projects", expanded=False):
+                        for proj in ats_response['Projects']:
+                            st.markdown(f"- {proj}")
+                else:
+                    st.warning("No projects section found in resume")
+
                 # Achievements
-                try:
-                    if ats_response.get('Achievements') and isinstance(ats_response['Achievements'], str) \
-                       and ats_response['Achievements'].strip() not in ["", "No achievements found"]:
-                        with st.expander("Achievements", expanded=False):
-                            ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
-                            for entry in ach_entries:
-                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                if lines:
-                                    st.markdown(f"- **{lines[0]}**")
-                                    for detail in lines[1:]:
-                                        st.markdown(f"  - {detail}")
-                except Exception as e:
-                    st.error(f"Error displaying achievements: {str(e)}")
+                if ats_response['Achievements']:
+                    with st.expander("Achievements", expanded=False):
+                        for ach in ats_response['Achievements']:
+                            st.markdown(f"- {ach}")
+                else:
+                    st.warning("No achievements section found in resume")
             
             # Tab 2: Skills Analysis
             with tab2:
@@ -837,4 +819,3 @@ if st.button(" Evaluate"):
                         st.markdown(f"{i}. {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
-        
