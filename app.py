@@ -6,6 +6,8 @@ import json
 from collections import Counter  
 from sklearn.feature_extraction.text import TfidfVectorizer  
 from sklearn.metrics.pairwise import cosine_similarity      
+import pandas as pd
+import plotly.express as px
 
 def clean_text(text):
     text = text.lower()
@@ -32,12 +34,12 @@ STOP_WORDS = {
     'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 
     'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
     'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 
-    'under', 'again', 'further', 'then', 'once'
+    'under', 'again', 'further', 'then'
 }
 
 DOMAIN_CATEGORIES = {
     'Programming Languages': {
-        'weight': 1.8,
+        'weight': 2.0,
         'skills': [
             'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'go', 'rust', 'swift',
             'kotlin', 'scala', 'php', 'ruby', 'perl', 'r', 'matlab', 'assembly', 'shell',
@@ -49,77 +51,70 @@ DOMAIN_CATEGORIES = {
             'maintained', 'debugged', 'optimized', 'refactored', 'enhanced', 'architected'
         ]
     },
-    'Web Development': {
-        'weight': 1.7,
+    'Software Development': {
+        'weight': 1.9,
         'skills': [
-            'html', 'css', 'sass', 'less', 'javascript', 'typescript', 'react', 'angular', 'vue',
-            'svelte', 'next.js', 'nuxt.js', 'gatsby', 'webpack', 'babel', 'vite', 'rollup',
-            'jquery', 'bootstrap', 'tailwind', 'material-ui', 'chakra-ui', 'styled-components',
-            'redux', 'mobx', 'graphql', 'rest', 'soap', 'websocket', 'pwa', 'spa', 'ssr',
-            'node.js', 'express', 'nest.js', 'fastify', 'koa', 'django', 'flask', 'fastapi',
-            'spring', 'laravel', 'rails', 'asp.net', 'php', 'wordpress', 'drupal', 'magento'
+            'object-oriented', 'functional programming', 'design patterns', 'algorithms', 
+            'data structures', 'code review', 'unit testing', 'integration testing',
+            'test-driven development', 'pair programming', 'agile', 'scrum', 'kanban',
+            'version control', 'git', 'svn', 'mercurial', 'code quality', 'clean code',
+            'refactoring', 'debugging', 'performance optimization', 'documentation',
+            'technical writing', 'api design', 'rest', 'graphql', 'grpc', 'microservices',
+            'monolithic architecture', 'serverless', 'containerization', 'docker',
+            'kubernetes', 'ci/cd', 'jenkins', 'github actions', 'gitlab ci', 'circleci'
         ],
         'context_boosters': [
-            'developed', 'built', 'designed', 'implemented', 'created', 'maintained', 'optimized',
-            'deployed', 'scaled', 'architected', 'engineered', 'integrated', 'customized'
+            'developed', 'designed', 'implemented', 'architected', 'engineered', 'optimized',
+            'refactored', 'debugged', 'tested', 'documented', 'reviewed'
         ]
     },
-    'DevOps & Cloud': {
+    'Data Science & AI': {
+        'weight': 1.8,
+        'skills': [
+            'machine learning', 'deep learning', 'neural networks', 'natural language processing',
+            'computer vision', 'reinforcement learning', 'data mining', 'data analysis',
+            'data visualization', 'statistics', 'probability', 'linear algebra', 'calculus',
+            'pandas', 'numpy', 'scipy', 'scikit-learn', 'tensorflow', 'pytorch', 'keras',
+            'opencv', 'nltk', 'spacy', 'matplotlib', 'seaborn', 'plotly', 'tableau',
+            'power bi', 'sql', 'nosql', 'mongodb', 'postgresql', 'mysql', 'redis',
+            'elasticsearch', 'hadoop', 'spark', 'kafka', 'airflow', 'etl', 'data pipeline',
+            'data warehouse', 'data lake', 'big data', 'feature engineering', 'model evaluation'
+        ],
+        'context_boosters': [
+            'analyzed', 'modeled', 'trained', 'evaluated', 'optimized', 'implemented',
+            'deployed', 'researched', 'published', 'presented', 'visualized'
+        ]
+    },
+    'Systems & Security': {
+        'weight': 1.7,
+        'skills': [
+            'operating systems', 'linux', 'windows', 'macos', 'networking', 'tcp/ip',
+            'http', 'https', 'dns', 'load balancing', 'distributed systems', 'parallel computing',
+            'concurrency', 'multithreading', 'memory management', 'compilers', 'interpreters',
+            'virtual machines', 'embedded systems', 'iot', 'cybersecurity', 'encryption',
+            'authentication', 'authorization', 'oauth', 'jwt', 'penetration testing',
+            'vulnerability assessment', 'firewalls', 'ids/ips', 'siem', 'secure coding',
+            'owasp', 'pki', 'ssl/tls', 'vpn', 'wireshark', 'nmap', 'metasploit'
+        ],
+        'context_boosters': [
+            'secured', 'protected', 'hardened', 'implemented', 'configured', 'monitored',
+            'analyzed', 'tested', 'audited', 'remediated', 'enforced'
+        ]
+    },
+    'Web & Mobile': {
         'weight': 1.6,
         'skills': [
-            'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'gitlab-ci', 'github-actions',
-            'circleci', 'travis', 'ansible', 'terraform', 'puppet', 'chef', 'prometheus', 'grafana',
-            'elk stack', 'nginx', 'apache', 'linux', 'unix', 'windows server', 'bash', 'shell',
-            'powershell', 'ci/cd', 'git', 'svn', 'mercurial', 'docker-compose', 'helm', 'istio',
-            'consul', 'vault', 'cloudformation', 'serverless', 'lambda', 'heroku', 'digitalocean',
-            'vercel', 'netlify', 'cloudflare', 'redis', 'memcached', 'rabbitmq', 'kafka'
+            'html', 'css', 'javascript', 'typescript', 'react', 'angular', 'vue', 'svelte',
+            'next.js', 'nuxt.js', 'gatsby', 'webpack', 'babel', 'vite', 'redux', 'mobx',
+            'graphql', 'rest', 'websocket', 'pwa', 'spa', 'ssr', 'node.js', 'express',
+            'nest.js', 'django', 'flask', 'fastapi', 'spring', 'laravel', 'rails',
+            'asp.net', 'android', 'ios', 'react native', 'flutter', 'swift', 'kotlin',
+            'objective-c', 'xamarin', 'cordova', 'ionic', 'responsive design', 'ux/ui',
+            'accessibility', 'seo', 'performance optimization', 'caching', 'cdn'
         ],
         'context_boosters': [
-            'deployed', 'configured', 'automated', 'orchestrated', 'managed', 'monitored',
-            'optimized', 'scaled', 'maintained', 'implemented', 'architected', 'designed'
-        ]
-    },
-    'Data Engineering & AI': {
-        'weight': 1.7,
-        'skills': [
-            'sql', 'mysql', 'postgresql', 'mongodb', 'cassandra', 'elasticsearch', 'hadoop',
-            'spark', 'kafka', 'airflow', 'numpy', 'pandas', 'scipy', 'scikit-learn', 'tensorflow',
-            'pytorch', 'keras', 'opencv', 'nltk', 'spacy', 'matplotlib', 'seaborn', 'plotly',
-            'tableau', 'power bi', 'machine learning', 'deep learning', 'nlp', 'computer vision',
-            'data mining', 'etl', 'data warehouse', 'data lake', 'big data', 'data modeling',
-            'data pipeline', 'data analytics', 'business intelligence', 'statistics'
-        ],
-        'context_boosters': [
-            'analyzed', 'processed', 'modeled', 'engineered', 'developed', 'implemented',
-            'optimized', 'trained', 'evaluated', 'deployed', 'researched', 'designed'
-        ]
-    },
-    'Software Architecture': {
-        'weight': 1.5,
-        'skills': [
-            'microservices', 'distributed systems', 'system design', 'api design', 'rest',
-            'graphql', 'grpc', 'event-driven', 'serverless', 'soa', 'mvc', 'mvvm', 'design patterns',
-            'clean architecture', 'domain-driven design', 'test-driven development', 'agile',
-            'scrum', 'kanban', 'ci/cd', 'devops', 'cloud native', 'scalability', 'reliability',
-            'security', 'performance', 'monitoring', 'logging', 'debugging', 'troubleshooting'
-        ],
-        'context_boosters': [
-            'architected', 'designed', 'implemented', 'developed', 'scaled', 'optimized',
-            'improved', 'transformed', 'modernized', 'standardized', 'documented'
-        ]
-    },
-    'Security & Networks': {
-        'weight': 1.4,
-        'skills': [
-            'cybersecurity', 'network security', 'penetration testing', 'ethical hacking',
-            'vulnerability assessment', 'firewall', 'ids/ips', 'siem', 'encryption', 'ssl/tls',
-            'vpn', 'authentication', 'authorization', 'oauth', 'jwt', 'kerberos', 'ldap',
-            'active directory', 'tcp/ip', 'dns', 'dhcp', 'routing', 'switching', 'load balancing',
-            'reverse proxy', 'wireshark', 'nmap', 'metasploit', 'burp suite', 'owasp'
-        ],
-        'context_boosters': [
-            'secured', 'protected', 'implemented', 'configured', 'monitored', 'analyzed',
-            'tested', 'audited', 'assessed', 'remediated', 'hardened', 'enforced'
+            'developed', 'built', 'designed', 'implemented', 'created', 'maintained',
+            'optimized', 'deployed', 'scaled', 'architected', 'engineered'
         ]
     }
 }
@@ -692,27 +687,60 @@ if st.button(" Evaluate"):
             with tab2:
                 st.markdown("### Skills Analysis")
                 
-                # Display key strengths
-                st.markdown("#### Key Strengths")
-                if ats_response['Key Strengths']:
-                    for strength in ats_response['Key Strengths']:
-                        st.success(f"✓ {strength}")
-                else:
-                    st.warning("No key strengths identified")
+                # Skill categories visualization
+                st.markdown("#### Skill Categories Match")
+                categories = [cat for cat in ats_response['Category Matches'] if ats_response['Category Matches'][cat] > 0]
+                scores = [ats_response['Category Matches'][cat] for cat in categories]
                 
-                # Display missing keywords
-                st.markdown("#### Missing Keywords")
-                if ats_response['Missing Keywords']:
-                    for keyword in ats_response['Missing Keywords']:
-                        st.error(f"✗ {keyword}")
-                else:
-                    st.success("No critical missing keywords")
+                fig1 = px.bar(
+                    x=categories,
+                    y=scores,
+                    color=scores,
+                    color_continuous_scale=["red", "orange", "green"],
+                    range_color=[0, 100],
+                    labels={"x": "Category", "y": "Match %"},
+                    height=400
+                )
+                fig1.update_layout(coloraxis_showscale=False)
+                st.plotly_chart(fig1, use_container_width=True)
                 
-                # Display category matches
-                st.markdown("#### Category Matches")
-                for category, score in ats_response['Category Matches'].items():
-                    color = 'green' if score >= 80 else 'orange' if score >= 60 else 'red'
-                    st.markdown(f"<span style='color:{color}'>{category}: {score}%</span>", unsafe_allow_html=True)
+                # Detailed skills breakdown
+                st.markdown("#### Skills Breakdown")
+                
+                jd_skills = {}
+                resume_skills = {}
+                
+                for category in DOMAIN_CATEGORIES:
+                    if category in ats_response['Category Matches']:
+                        with st.expander(f"{category} ({ats_response['Category Matches'][category]}%)", expanded=True):
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown("**Job Description Skills**")
+                                jd_skills = jd_categories.get(category, {})
+                                if jd_skills:
+                                    st.dataframe(
+                                        pd.DataFrame.from_dict(jd_skills, orient='index', columns=['Score'])
+                                        .sort_values('Score', ascending=False)
+                                    )
+                                else:
+                                    st.info("No relevant skills found in job description")
+                            
+                            with col2:
+                                st.markdown("**Your Resume Skills**")
+                                resume_skills = resume_categories.get(category, {})
+                                if resume_skills:
+                                    st.dataframe(
+                                        pd.DataFrame.from_dict(resume_skills, orient='index', columns=['Score'])
+                                        .sort_values('Score', ascending=False)
+                                    )
+                                else:
+                                    st.warning("No matching skills found in resume")
+                            
+                            # Skill gap analysis
+                            missing_skills = set(jd_skills.keys()) - set(resume_skills.keys())
+                            if missing_skills:
+                                st.markdown("**Recommended Skills to Add**")
+                                st.write(", ".join(sorted(missing_skills)))
             
             # Tab 3: Recommendations
             with tab3:
