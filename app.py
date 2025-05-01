@@ -20,17 +20,17 @@ st.markdown("""
             --bg-secondary: #f5f5f5;
             --border-color: rgba(0, 0, 0, 0.1);
         }
-        
+
         /* Force light theme */
         .stApp {
             background-color: var(--bg-primary) !important;
         }
-        
+
         body, .stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6 {
             color: var(--text-primary) !important;
         }
-        
-        /* All text inputs */
+
+        /* Inputs */
         .stTextInput > div > div > input,
         .stTextArea > div > div > textarea,
         .stSelectbox > div > div > select,
@@ -38,75 +38,78 @@ st.markdown("""
             background-color: white !important;
             color: black !important;
         }
-        
-        /* File uploader - comprehensive targeting */
+
+        /* File uploader */
         .stFileUploader {
             color: black !important;
         }
-        
-        /* Main uploader box */
+
         .stFileUploader > div {
             background-color: white !important;
             color: black !important;
         }
-        
-        /* Drop area */
+
         .stFileUploader > div > div {
             background-color: white !important;
             border: 1px dashed #cccccc !important;
             color: white !important;
         }
-        
-        /* Upload box */
+
         [data-testid="stFileUploader"] {
             background-color: white !important;
             color: white !important;
         }
-        
-        /* Upload box text */
+
         [data-testid="stFileUploader"] p {
             color: #4361ee !important;
         }
-        
-        /* Browse files button */
+
         .stFileUploader button {
             background-color: white !important;
             color: black !important;
             border: 1px solid #cccccc !important;
         }
-        
-        /* Hover states */
+
         .stFileUploader > div > div:hover,
         .stFileUploader button:hover {
             background-color: #f5f5f5 !important;
         }
-        
+
         .stFileUploader > div > div > svg {
             fill: black !important;
         }
-        
+
         /* Sidebar */
         [data-testid="stSidebar"] {
             background-color: var(--bg-secondary) !important;
             color: var(--text-primary) !important;
         }
-        
-        /* All buttons */
+
+        /* Buttons */
         .stButton > button {
             background-color: var(--primary-color) !important;
             color: white !important;
         }
-        
+
         /* Expanders and containers */
         .stExpander, .stMetric {
             background-color: var(--bg-secondary) !important;
             border-color: var(--border-color) !important;
             color: var(--text-primary) !important;
         }
-        
-        /* Disable dark mode completely */
+
+        /* Disable dark mode */
         [data-theme="dark"] {
             display: none !important;
+        }
+
+        /* Custom overrides for text content */
+        .white-text-evaluate {
+            color: white !important;
+        }
+
+        .black-text-jd {
+            color: black !important;
         }
     </style>
 """, unsafe_allow_html=True)
