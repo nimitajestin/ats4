@@ -679,24 +679,48 @@ if st.button(" Evaluate"):
                     if ats_response.get('Experience') and isinstance(ats_response['Experience'], str) \
                        and ats_response['Experience'].strip() not in ["", "No experience details found"]:
                         with st.expander("Experience", expanded=True):
-                            exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
+                            # Enhanced parsing for different resume formats
+                            exp_entries = []
+                            
+                            # Handle both double newline and bullet point separated entries
+                            if '\n\n' in ats_response['Experience']:
+                                exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
+                            elif '•' in ats_response['Experience']:
+                                exp_entries = [entry.strip() for entry in ats_response['Experience'].split('•') if entry.strip()]
+                            else:
+                                exp_entries = [ats_response['Experience']]
+                            
                             for entry in exp_entries:
                                 lines = [line.strip() for line in entry.split('\n') if line.strip()]
                                 if lines:
+                                    # Position/Company
                                     st.markdown(f"**{lines[0]}**")
-                                    if len(lines) > 1:
+                                    
+                                    # Dates/Location (if present)
+                                    if len(lines) > 1 and (any(char.isdigit() for char in lines[1]) or ',' in lines[1]):
                                         st.markdown(f"*{lines[1]}*")
-                                    for bullet in lines[2:]:
-                                        st.markdown(f"- {bullet}")
+                                        bullet_start = 2
+                                    else:
+                                        bullet_start = 1
+                                    
+                                    # Responsibilities/Achievements
+                                    for line in lines[bullet_start:]:
+                                        clean_line = line.replace('•', '').replace('-', '').strip()
+                                        if clean_line:
+                                            st.markdown(f"- {clean_line}")
                     else:
-                        st.warning("No experience section found in resume")
+                        st.warning("We couldn't find a clearly formatted experience section. Please check:")
+                        st.markdown("""
+                        - Your resume has an 'Experience' or 'Work History' section
+                        - Each position is clearly separated
+                        - Dates are included for each role
+                        """)
                 except Exception as e:
-                    st.error(f"Error displaying experience: {str(e)}")
+                    st.error(f"Error processing experience section. Please ensure your experience is properly formatted.")
                 
                 # Projects
                 try:
-                    if ats_response.get('Projects') and isinstance(ats_response['Projects'], str) \
-                       and ats_response['Projects'].strip() not in ["", "No projects found"]:
+                    if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
                         with st.expander("Projects", expanded=False):
                             proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
                             for entry in proj_entries:
@@ -710,8 +734,7 @@ if st.button(" Evaluate"):
                 
                 # Achievements
                 try:
-                    if ats_response.get('Achievements') and isinstance(ats_response['Achievements'], str) \
-                       and ats_response['Achievements'].strip() not in ["", "No achievements found"]:
+                    if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
                         with st.expander("Achievements", expanded=False):
                             ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
                             for entry in ach_entries:
