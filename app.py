@@ -678,32 +678,15 @@ if st.button(" Evaluate"):
             with tab2:
                 st.markdown("### Skills Analysis")
                 
-                # Skill categories visualization
-                st.markdown("#### Skill Categories Match")
-                categories = [
-                    cat for cat in ats_response['Category_Matches'] 
-                    if ats_response['Category_Matches'][cat] > 0
-                ]
-                scores = [ats_response['Category_Matches'][cat] for cat in categories]
-                
-                fig1 = px.bar(
-                    x=categories,
-                    y=scores,
-                    color=scores,
-                    color_continuous_scale=["red", "orange", "green"],
-                    range_color=[0, 100],
-                    labels={"x": "Category", "y": "Match %"},
-                    height=400
-                )
-                fig1.update_layout(coloraxis_showscale=False)
-                st.plotly_chart(fig1, use_container_width=True)
-                
                 # Detailed skills breakdown
                 st.markdown("#### Skills Breakdown")
                 
                 for category in DOMAIN_CATEGORIES:
                     if category in ats_response['Category_Matches']:
-                        with st.expander(f"{category} ({ats_response['Category_Matches'][category]}%)", expanded=True):
+                        match_percent = ats_response['Category_Matches'][category]
+                        color = "green" if match_percent >= 80 else "orange" if match_percent >= 60 else "red"
+                        
+                        with st.expander(f"{category} ({match_percent}%)", expanded=True):
                             col1, col2 = st.columns(2)
                             
                             # Job Description Skills
