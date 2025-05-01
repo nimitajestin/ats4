@@ -193,35 +193,16 @@ def calculate_match_percentage(resume_text, jd_text):
         print(f"Error in calculate_match_percentage: {str(e)}")
         return {'score': 0, 'category_scores': {}}
 
-def extract_text_from_pdf(pdf_file):
+def extract_text_from_pdf(uploaded_file):
     try:
-        # Improved PDF text extraction with section preservation
         text = ""
-        
-        # Try PyPDF2 first
-        reader = PyPDF2.PdfReader(pdf_file)
+        reader = PyPDF2.PdfReader(uploaded_file)
         for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                # Clean and preserve section structure
-                page_text = re.sub(r'\s+', ' ', page_text)  # Normalize whitespace
-                page_text = re.sub(r'(?<=\n)\s+', '\n', page_text)  # Clean line breaks
-                text += page_text + '\n\n'
-        
-        # Fallback to pdfplumber if PyPDF2 fails
-        if not text.strip():
-            with pdfplumber.open(pdf_file) as pdf:
-                text = '\n\n'.join([page.extract_text() for page in pdf.pages if page.extract_text()])
-        
-        # Enhanced section header detection
-        text = re.sub(r'(?i)(education|academics|degree)', '\nEDUCATION\n', text)
-        text = re.sub(r'(?i)(experience|work history|employment)', '\nEXPERIENCE\n', text)
-        text = re.sub(r'(?i)(projects|technical projects)', '\nPROJECTS\n', text)
-        
-        return text.strip()
+            text += page.extract_text() + '\n'
+        return text
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-        return ""
+        return None
 
 def extract_profile_summary(text):
     """Extract a comprehensive profile summary from resume text"""
@@ -681,89 +662,66 @@ if st.button(" Evaluate"):
                     if ats_response.get('Education') and isinstance(ats_response['Education'], str) \
                        and ats_response['Education'].strip() not in ["", "No education details found"]:
                         with st.expander("Education", expanded=True):
-                            edu_text = ats_response['Education']
-                            
-                            # Handle common CS education patterns
-                            if 'Degree' in edu_text or 'University' in edu_text or 'GPA' in edu_text:
-                                entries = [e.strip() for e in re.split(r'\n\n|•|-', edu_text) if e.strip()]
-                                for entry in entries:
-                                    lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                    if lines:
-                                        st.markdown(f"**{lines[0]}**")
-                                        for detail in lines[1:]:
-                                            if any(word in detail.lower() for word in ['gpa', 'grade', 'score']):
-                                                st.markdown(f"📊 *{detail}*")
-                                            elif any(word in detail.lower() for word in ['university', 'college', 'institute']):
-                                                st.markdown(f"🏛️ {detail}")
-                                            else:
-                                                st.markdown(f"- {detail}")
+                            edu_entries = [entry.strip() for entry in ats_response['Education'].split('\n\n') if entry.strip()]
+                            for entry in edu_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"**{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"- {detail}")
                     else:
-                        st.warning("We couldn't detect your education details. For CS resumes, please ensure:")
-                        st.markdown("""
-                        - Your education section includes your degree (e.g., 'B.Tech Computer Science')
-                        - University name is clearly listed
-                        - Dates or expected graduation are included
-                        """)
+                        st.warning("No education section found in resume")
                 except Exception as e:
-                    st.error("Error processing education section. Please check your education formatting.")
+                    st.error(f"Error displaying education: {str(e)}")
                 
                 # Experience
                 try:
                     if ats_response.get('Experience') and isinstance(ats_response['Experience'], str) \
                        and ats_response['Experience'].strip() not in ["", "No experience details found"]:
                         with st.expander("Experience", expanded=True):
-                            exp_text = ats_response['Experience']
-                            
-                            # Enhanced parsing for technical experience
-                            entries = []
-                            if '\n\n' in exp_text:
-                                entries = [e.strip() for e in exp_text.split('\n\n') if e.strip()]
-                            elif '•' in exp_text:
-                                entries = [e.strip() for e in exp_text.split('•') if e.strip()]
-                            elif '-' in exp_text:
-                                entries = [e.strip() for e in exp_text.split('-') if e.strip()]
-                            else:
-                                entries = [exp_text]
-                            
-                            for entry in entries:
+                            exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
+                            for entry in exp_entries:
                                 lines = [line.strip() for line in entry.split('\n') if line.strip()]
                                 if lines:
-                                    # Position/Company with tech role detection
-                                    role = lines[0]
-                                    if any(word.lower() in role.lower() for word in ['engineer', 'developer', 'analyst', 'scientist', 'intern']):
-                                        st.markdown(f"👨‍💻 **{role}**")
-                                    else:
-                                        st.markdown(f"**{role}**")
-                                    
-                                    # Dates/Location with tech term detection
+                                    st.markdown(f"**{lines[0]}**")
                                     if len(lines) > 1:
-                                        date_line = lines[1]
-                                        if any(word.lower() in date_line.lower() for word in ['present', 'remote', 'hybrid']):
-                                            st.markdown(f"📅 *{date_line}*")
-                                        elif any(char.isdigit() for char in date_line):
-                                            st.markdown(f"*{date_line}*")
-                                        
-                                    # Bullet points with tech keyword highlighting
-                                    for line in lines[2:]:
-                                        clean_line = re.sub(r'[•-]', '', line).strip()
-                                        if clean_line:
-                                            if any(word.lower() in clean_line.lower() for word in 
-                                                  ['python', 'java', 'c++', 'algorithm', 'database', 'api', 'cloud']):
-                                                st.markdown(f"- 💻 {clean_line}")
-                                            elif any(word.lower() in clean_line.lower() for word in 
-                                                    ['lead', 'manage', 'team']):
-                                                st.markdown(f"- 👥 {clean_line}")
-                                            else:
-                                                st.markdown(f"- {clean_line}")
+                                        st.markdown(f"*{lines[1]}*")
+                                    for bullet in lines[2:]:
+                                        st.markdown(f"- {bullet}")
                     else:
-                        st.warning("We couldn't detect your experience details. For CS resumes, please ensure:")
-                        st.markdown("""
-                        - Each position has a clear title (e.g., 'Software Engineer Intern')
-                        - Technical skills and achievements are bulleted
-                        - Dates are included for each role
-                        """)
+                        st.warning("No experience section found in resume")
                 except Exception as e:
-                    st.error("Error processing experience section. Please check your experience formatting.")
+                    st.error(f"Error displaying experience: {str(e)}")
+                
+                # Projects
+                try:
+                    if ats_response.get('Projects') and isinstance(ats_response['Projects'], str) \
+                       and ats_response['Projects'].strip() not in ["", "No projects found"]:
+                        with st.expander("Projects", expanded=False):
+                            proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
+                            for entry in proj_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"**{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"- {detail}")
+                except Exception as e:
+                    st.error(f"Error displaying projects: {str(e)}")
+                
+                # Achievements
+                try:
+                    if ats_response.get('Achievements') and isinstance(ats_response['Achievements'], str) \
+                       and ats_response['Achievements'].strip() not in ["", "No achievements found"]:
+                        with st.expander("Achievements", expanded=False):
+                            ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
+                            for entry in ach_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"- **{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"  - {detail}")
+                except Exception as e:
+                    st.error(f"Error displaying achievements: {str(e)}")
             
             # Tab 2: Skills Analysis
             with tab2:
@@ -879,3 +837,4 @@ if st.button(" Evaluate"):
                         st.markdown(f"{i}. {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
+        
