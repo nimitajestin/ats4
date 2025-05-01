@@ -1,29 +1,21 @@
 import PyPDF2
 import streamlit as st
 
-# Force light theme and set page config
-st.set_page_config(
-    page_title="Verq ATS Resume Evaluator",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Theme configuration to override all dark mode settings
+# Set theme configuration
 st.markdown("""
     <style>
         :root {
-            --primary-color: #1f497d;
-            --primary-light: rgba(31, 73, 125, 0.1);
-            --text-primary: #2c3e50;
-            --text-secondary: #7f8c8d;
+            --primary-color: #4361ee;
+            --primary-light: rgba(67, 97, 238, 0.1);
+            --text-primary: #4361ee;
+            --text-secondary: #4361ee;
             --bg-primary: #ffffff;
             --bg-secondary: #f5f5f5;
             --border-color: rgba(0, 0, 0, 0.1);
         }
         
         /* Force light theme */
-        body, .stApp {
-            background-color: var(--bg-primary) !important;
+        body, .stApp, .stMarkdown, .stText {
             color: var(--text-primary) !important;
         }
         
@@ -33,13 +25,14 @@ st.markdown("""
         .stSelectbox > div > div > select,
         .stNumberInput > div > div > input {
             background-color: white !important;
-            color: black !important;
+            color: var(--text-primary) !important;
         }
         
         /* File uploader */
         .stFileUploader > div > div {
             background-color: #f9f9f9 !important;
             border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
         }
         
         .stFileUploader > div > div:hover {
@@ -49,6 +42,7 @@ st.markdown("""
         /* Sidebar */
         [data-testid="stSidebar"] {
             background-color: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
         }
         
         /* All buttons */
@@ -61,6 +55,7 @@ st.markdown("""
         .stExpander, .stMetric {
             background-color: var(--bg-secondary) !important;
             border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
         }
         
         /* Disable dark mode completely */
@@ -635,7 +630,7 @@ def get_ats_feedback(resume_text, jd_text):
 # Streamlit App Interface
 st.markdown("""
     <div style="text-align: center;">
-        <h1 style="color: #1f497d;">Verq ATS Resume Evaluator</h1>
+        <h1 style="color: #4361ee;">Verq ATS Resume Evaluator</h1>
         <p>Upload your resume and job description to get instant feedback</p>
     </div>
     """, unsafe_allow_html=True)
