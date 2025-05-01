@@ -36,48 +36,91 @@ STOP_WORDS = {
 }
 
 DOMAIN_CATEGORIES = {
-    'Core Technical': {
-        'weight': 1.3,
+    'Programming Languages': {
+        'weight': 1.8,
         'skills': [
-            'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'ruby', 'php',
-            'sql', 'mysql', 'postgresql', 'mongodb', 'redis',
-            'aws', 'azure', 'gcp', 'docker', 'kubernetes',
-            'react', 'angular', 'vue', 'node.js', 'express',
-            'django', 'flask', 'spring', 'asp.net',
-            'html', 'css', 'sass', 'webpack', 'git'
+            'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'go', 'rust', 'swift',
+            'kotlin', 'scala', 'php', 'ruby', 'perl', 'r', 'matlab', 'assembly', 'shell',
+            'bash', 'powershell', 'sql', 'dart', 'groovy', 'lua', 'objective-c', 'haskell',
+            'erlang', 'clojure', 'f#', 'cobol', 'fortran', 'pascal', 'prolog'
         ],
-        'context_boosters': ['built', 'developed', 'implemented', 'optimized', 'architected']
+        'context_boosters': [
+            'developed', 'implemented', 'programmed', 'coded', 'built', 'created', 'authored',
+            'maintained', 'debugged', 'optimized', 'refactored', 'enhanced', 'architected'
+        ]
     },
-    'Industry Expertise': {
+    'Web Development': {
         'weight': 1.7,
         'skills': [
-            'cloud architecture', 'devops', 'ci/cd', 'microservices', 'api design',
-            'system design', 'distributed systems', 'scalability',
-            'financial modeling', 'risk management', 'investment analysis',
-            'health informatics', 'fda compliance', 'clinical systems',
-            'agile development', 'scrum', 'kanban', 'user research', 'product strategy'
+            'html', 'css', 'sass', 'less', 'javascript', 'typescript', 'react', 'angular', 'vue',
+            'svelte', 'next.js', 'nuxt.js', 'gatsby', 'webpack', 'babel', 'vite', 'rollup',
+            'jquery', 'bootstrap', 'tailwind', 'material-ui', 'chakra-ui', 'styled-components',
+            'redux', 'mobx', 'graphql', 'rest', 'soap', 'websocket', 'pwa', 'spa', 'ssr',
+            'node.js', 'express', 'nest.js', 'fastify', 'koa', 'django', 'flask', 'fastapi',
+            'spring', 'laravel', 'rails', 'asp.net', 'php', 'wordpress', 'drupal', 'magento'
         ],
-        'context_boosters': ['led', 'managed', 'spearheaded', 'transformed', 'designed']
+        'context_boosters': [
+            'developed', 'built', 'designed', 'implemented', 'created', 'maintained', 'optimized',
+            'deployed', 'scaled', 'architected', 'engineered', 'integrated', 'customized'
+        ]
     },
-    'Applied Skills': {
+    'DevOps & Cloud': {
+        'weight': 1.6,
+        'skills': [
+            'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'gitlab-ci', 'github-actions',
+            'circleci', 'travis', 'ansible', 'terraform', 'puppet', 'chef', 'prometheus', 'grafana',
+            'elk stack', 'nginx', 'apache', 'linux', 'unix', 'windows server', 'bash', 'shell',
+            'powershell', 'ci/cd', 'git', 'svn', 'mercurial', 'docker-compose', 'helm', 'istio',
+            'consul', 'vault', 'cloudformation', 'serverless', 'lambda', 'heroku', 'digitalocean',
+            'vercel', 'netlify', 'cloudflare', 'redis', 'memcached', 'rabbitmq', 'kafka'
+        ],
+        'context_boosters': [
+            'deployed', 'configured', 'automated', 'orchestrated', 'managed', 'monitored',
+            'optimized', 'scaled', 'maintained', 'implemented', 'architected', 'designed'
+        ]
+    },
+    'Data Engineering & AI': {
+        'weight': 1.7,
+        'skills': [
+            'sql', 'mysql', 'postgresql', 'mongodb', 'cassandra', 'elasticsearch', 'hadoop',
+            'spark', 'kafka', 'airflow', 'numpy', 'pandas', 'scipy', 'scikit-learn', 'tensorflow',
+            'pytorch', 'keras', 'opencv', 'nltk', 'spacy', 'matplotlib', 'seaborn', 'plotly',
+            'tableau', 'power bi', 'machine learning', 'deep learning', 'nlp', 'computer vision',
+            'data mining', 'etl', 'data warehouse', 'data lake', 'big data', 'data modeling',
+            'data pipeline', 'data analytics', 'business intelligence', 'statistics'
+        ],
+        'context_boosters': [
+            'analyzed', 'processed', 'modeled', 'engineered', 'developed', 'implemented',
+            'optimized', 'trained', 'evaluated', 'deployed', 'researched', 'designed'
+        ]
+    },
+    'Software Architecture': {
+        'weight': 1.5,
+        'skills': [
+            'microservices', 'distributed systems', 'system design', 'api design', 'rest',
+            'graphql', 'grpc', 'event-driven', 'serverless', 'soa', 'mvc', 'mvvm', 'design patterns',
+            'clean architecture', 'domain-driven design', 'test-driven development', 'agile',
+            'scrum', 'kanban', 'ci/cd', 'devops', 'cloud native', 'scalability', 'reliability',
+            'security', 'performance', 'monitoring', 'logging', 'debugging', 'troubleshooting'
+        ],
+        'context_boosters': [
+            'architected', 'designed', 'implemented', 'developed', 'scaled', 'optimized',
+            'improved', 'transformed', 'modernized', 'standardized', 'documented'
+        ]
+    },
+    'Security & Networks': {
         'weight': 1.4,
         'skills': [
-            'data analysis', 'machine learning', 'deep learning', 'nlp',
-            'process automation', 'etl', 'data pipeline',
-            'system design', 'performance optimization', 'security compliance',
-            'testing', 'debugging', 'monitoring', 'logging'
+            'cybersecurity', 'network security', 'penetration testing', 'ethical hacking',
+            'vulnerability assessment', 'firewall', 'ids/ips', 'siem', 'encryption', 'ssl/tls',
+            'vpn', 'authentication', 'authorization', 'oauth', 'jwt', 'kerberos', 'ldap',
+            'active directory', 'tcp/ip', 'dns', 'dhcp', 'routing', 'switching', 'load balancing',
+            'reverse proxy', 'wireshark', 'nmap', 'metasploit', 'burp suite', 'owasp'
         ],
-        'context_boosters': ['analyzed', 'improved', 'secured', 'scaled', 'automated']
-    },
-    'Leadership': {
-        'weight': 1.2,
-        'skills': [
-            'team leadership', 'project management', 'stakeholder management',
-            'strategic planning', 'cross-functional collaboration',
-            'mentoring', 'coaching', 'resource allocation',
-            'budget management', 'vendor management'
-        ],
-        'context_boosters': ['led', 'mentored', 'aligned', 'drove', 'coordinated']
+        'context_boosters': [
+            'secured', 'protected', 'implemented', 'configured', 'monitored', 'analyzed',
+            'tested', 'audited', 'assessed', 'remediated', 'hardened', 'enforced'
+        ]
     }
 }
 
@@ -88,7 +131,6 @@ def extract_skills_and_keywords(text):
     skills_data = {category: {'skills': {}, 'context_count': 0} 
                   for category in DOMAIN_CATEGORIES}
     
-    # Extract skills with context
     for category, data in DOMAIN_CATEGORIES.items():
         pattern = re.compile(r'\b(' + '|'.join(map(re.escape, data['skills'])) + r')\b')
         
@@ -97,8 +139,8 @@ def extract_skills_and_keywords(text):
             context = text[max(0, match.start()-100):min(len(text), match.end()+100)]
             
             base_score = 0.7
-            context_boost = sum(boost in context for boost in data['context_boosters']) * 0.1
-            base_score = min(1.0, base_score + context_boost)
+            if any(boost in context for boost in data['context_boosters']):
+                base_score = min(1.0, base_score + 0.3)
             
             if skill in skills_data[category]['skills']:
                 base_score = min(1.0, skills_data[category]['skills'][skill] + 0.15)
@@ -106,7 +148,6 @@ def extract_skills_and_keywords(text):
             skills_data[category]['skills'][skill] = base_score
             skills_data[category]['context_count'] += 1
     
-    # Extract additional keywords
     keywords = [word for word in re.findall(r'\b\w{4,}\b', text) 
                if word not in STOP_WORDS and not word.isdigit()]
     
@@ -191,88 +232,46 @@ def extract_profile_summary(text):
         years_exp = exp_match.group(1) if exp_match else None
         
         # Extract current/most recent role
-        role_keywords = [
-            'software engineer', 'senior engineer', 'lead engineer', 'technical lead',
-            'developer', 'full stack developer', 'backend developer', 'frontend developer',
-            'data scientist', 'machine learning engineer', 'devops engineer',
-            'product manager', 'project manager', 'program manager',
-            'architect', 'solutions architect', 'technical architect',
-            'analyst', 'business analyst', 'data analyst',
-            'consultant', 'technical consultant'
-        ]
-        
+        role_keywords = ['engineer', 'developer', 'manager', 'analyst', 'consultant', 'architect']
         role = None
         for keyword in role_keywords:
-            role_match = re.search(rf'(?i){keyword}[\w\s]*', text)
+            role_match = re.search(rf'(?:senior\s+)?{keyword}[\w\s]*', text_lower)
             if role_match:
                 role = role_match.group(0).strip().title()
                 break
         
-        # Extract key skills (top 3-5)
+        # Extract key skills (top 3)
         skills = []
-        skill_keywords = list(set([skill for category in DOMAIN_CATEGORIES.values() for skill in category['skills']]))
+        skill_keywords = ['python', 'java', 'javascript', 'react', 'node', 'aws', 'cloud', 'full stack', 'backend', 'frontend']
         for skill in skill_keywords:
             if skill in text_lower:
                 skills.append(skill.title())
-                if len(skills) == 5:
+                if len(skills) == 3:
                     break
         
-        # Build comprehensive summary
+        # Build summary
         summary_parts = []
-        if role:
-            summary_parts.append(f"Experienced {role}")
         if years_exp:
-            summary_parts.append(f"with {years_exp}+ years of professional experience")
+            summary_parts.append(f"{years_exp}+ years of experience")
+        if role:
+            summary_parts.append(f"as {role}")
         if skills:
-            summary_parts.append(f"specializing in {', '.join(skills[:-1])} and {skills[-1]}")
-        
-        # Add any certifications or notable achievements
-        cert_match = re.search(r'(?i)(certified|certification|certificate)\s+(\w+(?:\s+\w+){0,3})', text)
-        if cert_match:
-            summary_parts.append(f"Holds {cert_match.group(0)}")
+            summary_parts.append(f"specializing in {', '.join(skills)}")
         
         summary_section = [' '.join(summary_parts)]
     
     return ' '.join(summary_section).strip()
 
 def analyze_education(text):
-    """Enhanced education analysis with comprehensive degree and field detection"""
+    """Enhanced education analysis with better structure and detail capture"""
     education_info = []
     lines = text.split('\n')
     is_education_section = False
     current_degree = {}
     
-    # Enhanced keywords for education detection
+    # Keywords for education detection
     edu_keywords = ['education', 'academic', 'qualification', 'university', 'college', 'institute', 'school']
-    degree_patterns = {
-        'bachelor': [
-            r'bachelor[s]?\s+(?:of|in)\s+(?:science|arts|engineering|technology|computer)',
-            r'b\.?(?:sc|tech|e|ca|ba|s)\b',
-            r'undergraduate degree'
-        ],
-        'master': [
-            r'master[s]?\s+(?:of|in)\s+(?:science|arts|engineering|technology|computer)',
-            r'm\.?(?:sc|tech|ca|ba|s)\b',
-            r'graduate degree'
-        ],
-        'phd': [
-            r'ph\.?d',
-            r'doctor\s+of\s+philosophy',
-            r'doctorate'
-        ]
-    }
-    
-    major_patterns = [
-        r'computer science',
-        r'information technology',
-        r'software engineering',
-        r'data science',
-        r'artificial intelligence',
-        r'electrical engineering',
-        r'information systems',
-        r'business administration',
-        r'mathematics'
-    ]
+    degree_keywords = ['bachelor', 'master', 'phd', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc']
     
     for line in lines:
         line = line.strip()
@@ -287,43 +286,33 @@ def analyze_education(text):
                 current_degree = {}
             continue
         
+        # Check for end of education section
+        if is_education_section and any(keyword.lower() in line.lower() for keyword in ['experience', 'work', 'skills']):
+            is_education_section = False
+            if current_degree:
+                education_info.append(current_degree)
+            break
+        
         if is_education_section:
-            # Check for end of education section
-            if any(keyword.lower() in line.lower() for keyword in ['experience', 'work', 'skills']):
-                is_education_section = False
+            # Detect degree information
+            if any(keyword.lower() in line.lower() for keyword in degree_keywords):
                 if current_degree:
                     education_info.append(current_degree)
-                break
-            
-            # Detect degree level and major
-            for level, patterns in degree_patterns.items():
-                for pattern in patterns:
-                    if re.search(pattern, line.lower()):
-                        current_degree['level'] = level.title()
-                        # Look for major in the same line
-                        for major in major_patterns:
-                            if major.lower() in line.lower():
-                                current_degree['major'] = major.title()
-                        break
-            
+                current_degree = {'degree': line}
             # Detect university/institution
-            if any(keyword.lower() in line.lower() for keyword in ['university', 'college', 'institute']):
-                current_degree['institution'] = line.strip()
-            
+            elif any(keyword.lower() in line.lower() for keyword in ['university', 'college', 'institute']):
+                if current_degree:
+                    current_degree['institution'] = line
+                else:
+                    current_degree = {'institution': line}
             # Detect graduation year
-            year_match = re.search(r'\b(19|20)\d{2}\b', line)
-            if year_match:
-                current_degree['year'] = year_match.group()
-            
+            elif re.search(r'\b20\d{2}\b', line):
+                if current_degree:
+                    current_degree['year'] = re.search(r'\b20\d{2}\b', line).group()
             # Detect GPA/grades
-            gpa_match = re.search(r'(?i)(?:gpa|cgpa|grade)[\s:]+([0-9.]+)', line)
-            if gpa_match:
-                current_degree['gpa'] = gpa_match.group(1)
-            
-            # If we have enough information, save this degree and start a new one
-            if len(current_degree) >= 2 and 'level' in current_degree:
-                education_info.append(current_degree)
-                current_degree = {}
+            elif any(keyword.lower() in line.lower() for keyword in ['gpa', 'grade', 'cgpa']):
+                if current_degree:
+                    current_degree['grades'] = line
     
     # Add final degree if any
     if current_degree:
@@ -333,22 +322,15 @@ def analyze_education(text):
     formatted_education = []
     for edu in education_info:
         parts = []
-        if 'level' in edu and 'major' in edu:
-            parts.append(f"{edu['level']} in {edu['major']}")
-        elif 'level' in edu:
-            parts.append(edu['level'])
-        
+        if 'degree' in edu:
+            parts.append(edu['degree'])
         if 'institution' in edu:
-            parts.append(f"from {edu['institution']}")
-        
+            parts.append(edu['institution'])
         if 'year' in edu:
             parts.append(f"({edu['year']})")
-        
-        if 'gpa' in edu:
-            parts.append(f"- GPA: {edu['gpa']}")
-        
-        if parts:
-            formatted_education.append(' '.join(parts))
+        if 'grades' in edu:
+            parts.append(f"- {edu['grades']}")
+        formatted_education.append(' '.join(parts))
     
     return '\n'.join(formatted_education) if formatted_education else "No education details found"
 
@@ -359,12 +341,9 @@ def analyze_experience(text):
     is_experience_section = False
     current_role = {}
     
-    # Enhanced keywords for experience detection
-    exp_keywords = ['experience', 'employment', 'work history', 'professional background']
-    role_keywords = [
-        'engineer', 'developer', 'manager', 'analyst', 'consultant', 'architect',
-        'lead', 'director', 'specialist', 'administrator', 'designer'
-    ]
+    # Keywords for experience detection
+    exp_keywords = ['experience', 'employment', 'work history']
+    role_keywords = ['engineer', 'developer', 'manager', 'analyst', 'consultant', 'architect']
     
     for line in lines:
         line = line.strip()
@@ -379,37 +358,31 @@ def analyze_experience(text):
                 current_role = {}
             continue
         
+        # Check for end of experience section
+        if is_experience_section and any(keyword.lower() in line.lower() for keyword in ['education', 'skills', 'projects']):
+            is_experience_section = False
+            if current_role:
+                experience_info.append(current_role)
+            break
+        
         if is_experience_section:
-            # Check for end of experience section
-            if any(keyword.lower() in line.lower() for keyword in ['education', 'skills', 'projects']):
-                is_experience_section = False
-                if current_role:
-                    experience_info.append(current_role)
-                break
-            
-            # Detect role/title with more context
+            # Detect role/title
             if any(keyword.lower() in line.lower() for keyword in role_keywords):
                 if current_role:
                     experience_info.append(current_role)
-                current_role = {'title': line.strip()}
-            
-            # Detect company name
-            elif current_role and 'company' not in current_role and not line.startswith(('•', '-', '*')):
-                current_role['company'] = line.strip()
-            
+                current_role = {'title': line}
+            # Detect company name (usually follows the title)
+            elif current_role and 'company' not in current_role:
+                current_role['company'] = line
             # Detect date range
             elif re.search(r'\b(19|20)\d{2}\b', line):
                 if current_role:
-                    current_role['duration'] = line.strip()
-            
+                    current_role['duration'] = line
             # Detect responsibilities/achievements
             elif line.startswith(('•', '-', '*')) or re.search(r'^\d+\.', line):
                 if 'responsibilities' not in current_role:
                     current_role['responsibilities'] = []
-                # Clean up the bullet point and add it
-                cleaned_line = re.sub(r'^[•\-*]\s*', '', line).strip()
-                if cleaned_line:
-                    current_role['responsibilities'].append(cleaned_line)
+                current_role['responsibilities'].append(line)
     
     # Add final role if any
     if current_role:
@@ -425,134 +398,113 @@ def analyze_experience(text):
             parts.append(f"at {exp['company']}")
         if 'duration' in exp:
             parts.append(f"({exp['duration']})")
-        
         formatted_experience.append(' '.join(parts))
-        
         if 'responsibilities' in exp:
-            for resp in exp['responsibilities']:
-                formatted_experience.append(f"  • {resp}")
+            formatted_experience.extend([f"  {resp}" for resp in exp['responsibilities']])
     
     return '\n'.join(formatted_experience) if formatted_experience else "No experience details found"
 
 def analyze_projects(text):
-    """Enhanced project analysis with better context and detail extraction"""
     projects = []
+    
+    # Split text into lines and look for project-related content
     lines = text.split('\n')
     is_project_section = False
-    current_project = {'name': '', 'description': [], 'technologies': set()}
+    current_project = []
     
-    # Enhanced keywords for project detection
-    project_keywords = ['project', 'developed', 'implemented', 'created', 'built', 'designed']
-    tech_keywords = set([skill.lower() for category in DOMAIN_CATEGORIES.values() for skill in category['skills']])
+    # Keywords that indicate project information
+    project_keywords = ['project', 'developed', 'implemented', 'created', 'built']
     
     for line in lines:
         line = line.strip()
         if not line:
             continue
-        
-        # Check for project section start
+            
+        # Check if this line starts a project section
         if any(keyword.lower() in line.lower() for keyword in ['projects', 'technical projects']):
             is_project_section = True
             continue
-        
+            
+        # If we're in project section, collect the information
         if is_project_section:
-            # Check for end of project section
+            # Check if we've reached the end of project section
             if any(keyword.lower() in line.lower() for keyword in ['education', 'experience', 'skills', 'achievements']):
                 is_project_section = False
-                if current_project['name']:
-                    projects.append(current_project)
+                if current_project:
+                    projects.append(' '.join(current_project))
                 break
-            
-            # Start new project
+                
+            # Start a new project
             if any(keyword.lower() in line.lower() for keyword in project_keywords):
-                if current_project['name']:
-                    projects.append(current_project)
-                current_project = {'name': line.strip(), 'description': [], 'technologies': set()}
-            elif current_project['name']:
-                # Add description
-                current_project['description'].append(line)
-                # Extract technologies
-                words = line.lower().split()
-                current_project['technologies'].update(tech for tech in tech_keywords if tech in words)
+                if current_project:
+                    projects.append(' '.join(current_project))
+                current_project = [line]
+            elif current_project:
+                current_project.append(line)
     
-    # Add final project if any
-    if current_project['name']:
-        projects.append(current_project)
+    # Add the last project if any
+    if current_project:
+        projects.append(' '.join(current_project))
     
-    # Format projects
-    formatted_projects = []
-    for project in projects:
-        project_str = f"{project['name']}"
-        if project['technologies']:
-            project_str += f" (Technologies: {', '.join(project['technologies'])})"
-        if project['description']:
-            project_str += f"\n  • {' '.join(project['description'])}"
-        formatted_projects.append(project_str)
+    # If no structured project section found, try to extract from whole text
+    if not projects:
+        for line in lines:
+            if any(keyword.lower() in line.lower() for keyword in project_keywords):
+                projects.append(line)
     
-    return formatted_projects if formatted_projects else []
+    return projects if projects else []
 
 def analyze_achievements(text):
-    """Enhanced achievement analysis with better context and metric extraction"""
     achievements = []
+    
+    # Split text into lines and look for achievement-related content
     lines = text.split('\n')
     is_achievement_section = False
     current_achievement = []
     
-    # Enhanced keywords for achievement detection
+    # Keywords that indicate achievements
     achievement_keywords = [
         'achieved', 'awarded', 'won', 'recognized', 'selected', 'ranked',
         'improved', 'increased', 'decreased', 'reduced', 'saved', 'delivered',
-        'led', 'managed', 'honor', 'certificate', 'certification',
-        'optimized', 'accelerated', 'enhanced', 'streamlined'
-    ]
-    
-    metric_patterns = [
-        r'\d+%',
-        r'\$\d+(?:,\d+)*(?:\.\d+)?[KMB]?',
-        r'\d+(?:,\d+)*(?:\.\d+)?[KMB]?\s*(?:users|customers|clients|hours|days)',
-        r'top\s+\d+%'
+        'led', 'managed', 'honor', 'certificate', 'certification'
     ]
     
     for line in lines:
         line = line.strip()
         if not line:
             continue
-        
-        # Check for achievements section start
+            
+        # Check if this line starts an achievements section
         if any(keyword.lower() in line.lower() for keyword in ['achievements', 'accomplishments', 'honors']):
             is_achievement_section = True
             continue
-        
+            
+        # If we're in achievements section, collect the information
         if is_achievement_section:
-            # Check for end of achievements section
+            # Check if we've reached the end of achievements section
             if any(keyword.lower() in line.lower() for keyword in ['education', 'experience', 'skills', 'projects']):
                 is_achievement_section = False
                 if current_achievement:
                     achievements.append(' '.join(current_achievement))
                 break
-            
-            # Process achievement
-            has_keyword = any(keyword.lower() in line.lower() for keyword in achievement_keywords)
-            has_metric = any(re.search(pattern, line) for pattern in metric_patterns)
-            
-            if has_keyword or has_metric:
+                
+            # Start a new achievement
+            if any(keyword.lower() in line.lower() for keyword in achievement_keywords):
                 if current_achievement:
                     achievements.append(' '.join(current_achievement))
                 current_achievement = [line]
             elif current_achievement:
                 current_achievement.append(line)
     
-    # Add final achievement if any
+    # Add the last achievement if any
     if current_achievement:
         achievements.append(' '.join(current_achievement))
     
-    # If no structured achievements section found, scan entire text
+    # If no structured achievements section found, try to extract from whole text
     if not achievements:
         for line in lines:
-            has_keyword = any(keyword.lower() in line.lower() for keyword in achievement_keywords)
-            has_metric = any(re.search(pattern, line) for pattern in metric_patterns)
-            if has_keyword and has_metric:
-                achievements.append(line.strip())
+            if any(keyword.lower() in line.lower() for keyword in achievement_keywords):
+                achievements.append(line)
     
     return achievements if achievements else []
 
@@ -601,7 +553,7 @@ def get_ats_feedback(resume_text, jd_text):
         matched_keywords = list(set(resume_keywords) & set(jd_keywords))
         missing_keywords = list(set(jd_keywords) - set(resume_keywords))
         
-        # Generate customized recommendations
+        # Create recommendations based on analysis
         recommendations = []
         
         # Add keyword-based recommendations
@@ -617,15 +569,6 @@ def get_ats_feedback(resume_text, jd_text):
         # Add skill-based recommendations
         if match_data['score'] < 70:
             recommendations.append("Focus on developing skills that align with job requirements")
-        
-        # Add customized recommendations based on analysis
-        if sections['Experience']:
-            if not any('led' in exp.lower() or 'managed' in exp.lower() for exp in sections['Experience'].split('\n')):
-                recommendations.append("Highlight leadership and management experience")
-        
-        if sections['Education']:
-            if not any('certification' in edu.lower() for edu in sections['Education'].split('\n')):
-                recommendations.append("Consider adding relevant certifications")
         
         # Add general recommendations
         recommendations.extend([
