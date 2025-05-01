@@ -647,63 +647,81 @@ if st.button(" Evaluate"):
                 st.divider()
                 
                 # Profile Summary
-                if ats_response.get('Profile Summary') and ats_response['Profile Summary'] and ats_response['Profile Summary'] != "No profile summary found":
-                    with st.expander("Profile Summary", expanded=True):
-                        st.write(ats_response['Profile Summary'])
-                else:
-                    st.warning("No profile summary found in resume")
+                try:
+                    if ats_response.get('Profile Summary') and isinstance(ats_response['Profile Summary'], str) \
+                       and ats_response['Profile Summary'].strip() not in ["", "No profile summary found"]:
+                        with st.expander("Profile Summary", expanded=True):
+                            st.write(ats_response['Profile Summary'])
+                    else:
+                        st.warning("No profile summary found in resume")
+                except Exception as e:
+                    st.error(f"Error displaying profile summary: {str(e)}")
                 
                 # Education
-                if ats_response.get('Education') and ats_response['Education'] and ats_response['Education'] != "No education details found":
-                    with st.expander("Education", expanded=True):
-                        # Parse education entries
-                        edu_entries = [entry.strip() for entry in ats_response['Education'].split('\n\n') if entry.strip()]
-                        for entry in edu_entries:
-                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                            if lines:
-                                st.markdown(f"**{lines[0]}**")  # Degree/Institution
-                                for detail in lines[1:]:
-                                    st.markdown(f"- {detail}")  # Dates/GPA/Details
-                else:
-                    st.warning("No education section found in resume")
+                try:
+                    if ats_response.get('Education') and isinstance(ats_response['Education'], str) \
+                       and ats_response['Education'].strip() not in ["", "No education details found"]:
+                        with st.expander("Education", expanded=True):
+                            edu_entries = [entry.strip() for entry in ats_response['Education'].split('\n\n') if entry.strip()]
+                            for entry in edu_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"**{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"- {detail}")
+                    else:
+                        st.warning("No education section found in resume")
+                except Exception as e:
+                    st.error(f"Error displaying education: {str(e)}")
                 
                 # Experience
-                if ats_response.get('Experience') and ats_response['Experience'] and ats_response['Experience'] != "No experience details found":
-                    with st.expander("Experience", expanded=True):
-                        # Parse experience entries
-                        exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
-                        for entry in exp_entries:
-                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                            if lines:
-                                st.markdown(f"**{lines[0]}**")  # Position/Company
-                                if len(lines) > 1:
-                                    st.markdown(f"*{lines[1]}*")  # Dates
-                                for bullet in lines[2:]:
-                                    st.markdown(f"- {bullet}")  # Responsibilities
-                else:
-                    st.warning("No experience section found in resume")
+                try:
+                    if ats_response.get('Experience') and isinstance(ats_response['Experience'], str) \
+                       and ats_response['Experience'].strip() not in ["", "No experience details found"]:
+                        with st.expander("Experience", expanded=True):
+                            exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
+                            for entry in exp_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"**{lines[0]}**")
+                                    if len(lines) > 1:
+                                        st.markdown(f"*{lines[1]}*")
+                                    for bullet in lines[2:]:
+                                        st.markdown(f"- {bullet}")
+                    else:
+                        st.warning("No experience section found in resume")
+                except Exception as e:
+                    st.error(f"Error displaying experience: {str(e)}")
                 
                 # Projects
-                if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
-                    with st.expander("Projects", expanded=False):
-                        proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
-                        for entry in proj_entries:
-                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                            if lines:
-                                st.markdown(f"**{lines[0]}**")
-                                for detail in lines[1:]:
-                                    st.markdown(f"- {detail}")
+                try:
+                    if ats_response.get('Projects') and isinstance(ats_response['Projects'], str) \
+                       and ats_response['Projects'].strip() not in ["", "No projects found"]:
+                        with st.expander("Projects", expanded=False):
+                            proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
+                            for entry in proj_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"**{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"- {detail}")
+                except Exception as e:
+                    st.error(f"Error displaying projects: {str(e)}")
                 
                 # Achievements
-                if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
-                    with st.expander("Achievements", expanded=False):
-                        ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
-                        for entry in ach_entries:
-                            lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                            if lines:
-                                st.markdown(f"- **{lines[0]}**")
-                                for detail in lines[1:]:
-                                    st.markdown(f"  - {detail}")
+                try:
+                    if ats_response.get('Achievements') and isinstance(ats_response['Achievements'], str) \
+                       and ats_response['Achievements'].strip() not in ["", "No achievements found"]:
+                        with st.expander("Achievements", expanded=False):
+                            ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
+                            for entry in ach_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"- **{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"  - {detail}")
+                except Exception as e:
+                    st.error(f"Error displaying achievements: {str(e)}")
             
             # Tab 2: Skills Analysis
             with tab2:
