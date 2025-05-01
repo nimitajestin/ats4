@@ -193,16 +193,35 @@ def calculate_match_percentage(resume_text, jd_text):
         print(f"Error in calculate_match_percentage: {str(e)}")
         return {'score': 0, 'category_scores': {}}
 
-def extract_text_from_pdf(uploaded_file):
+def extract_text_from_pdf(pdf_file):
     try:
+        # Improved PDF text extraction with section preservation
         text = ""
-        reader = PyPDF2.PdfReader(uploaded_file)
+        
+        # Try PyPDF2 first
+        reader = PyPDF2.PdfReader(pdf_file)
         for page in reader.pages:
-            text += page.extract_text() + '\n'
-        return text
+            page_text = page.extract_text()
+            if page_text:
+                # Clean and preserve section structure
+                page_text = re.sub(r'\s+', ' ', page_text)  # Normalize whitespace
+                page_text = re.sub(r'(?<=\n)\s+', '\n', page_text)  # Clean line breaks
+                text += page_text + '\n\n'
+        
+        # Fallback to pdfplumber if PyPDF2 fails
+        if not text.strip():
+            with pdfplumber.open(pdf_file) as pdf:
+                text = '\n\n'.join([page.extract_text() for page in pdf.pages if page.extract_text()])
+        
+        # Enhanced section header detection
+        text = re.sub(r'(?i)(education|academics|degree)', '\nEDUCATION\n', text)
+        text = re.sub(r'(?i)(experience|work history|employment)', '\nEXPERIENCE\n', text)
+        text = re.sub(r'(?i)(projects|technical projects)', '\nPROJECTS\n', text)
+        
+        return text.strip()
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-        return None
+        return ""
 
 def extract_profile_summary(text):
     """Extract a comprehensive profile summary from resume text"""
