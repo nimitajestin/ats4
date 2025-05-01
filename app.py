@@ -1,6 +1,13 @@
 import PyPDF2
 import streamlit as st
 
+# Force light theme and set page config
+st.set_page_config(
+    page_title="Verq ATS Resume Evaluator",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Set theme configuration
 st.markdown("""
     <style>
@@ -32,23 +39,46 @@ st.markdown("""
             color: var(--text-primary) !important;
         }
         
-        /* File uploader */
+        /* File uploader - comprehensive targeting */
+        .stFileUploader {
+            color: black !important;
+        }
+        
+        /* Main uploader box */
+        .stFileUploader > div {
+            background-color: white !important;
+            color: black !important;
+        }
+        
+        /* Drop area */
         .stFileUploader > div > div {
             background-color: white !important;
-            border-color: var(--border-color) !important;
+            border: 1px dashed #cccccc !important;
             color: black !important;
         }
         
-        .stFileUploader > div > div:hover {
+        /* Upload box */
+        [data-testid="stFileUploader"] {
+            background-color: white !important;
+            color: black !important;
+        }
+        
+        /* Upload box text */
+        [data-testid="stFileUploader"] p {
+            color: black !important;
+        }
+        
+        /* Browse files button */
+        .stFileUploader button {
+            background-color: white !important;
+            color: black !important;
+            border: 1px solid #cccccc !important;
+        }
+        
+        /* Hover states */
+        .stFileUploader > div > div:hover,
+        .stFileUploader button:hover {
             background-color: #f5f5f5 !important;
-        }
-        
-        .stFileUploader > div > label {
-            color: black !important;
-        }
-        
-        .stFileUploader > div > div > div {
-            color: black !important;
         }
         
         .stFileUploader > div > div > svg {
