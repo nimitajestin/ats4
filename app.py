@@ -651,7 +651,7 @@ if st.button(" Evaluate"):
                                 if lines:
                                     # Highlight degree information
                                     if any(word in lines[0].lower() for word in ['bachelor', 'master', 'phd', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc', 'b.s', 'm.s']):
-                                        st.markdown(f"🎓 **{lines[0]}**")
+                                        st.markdown(f"**{lines[0]}**")
                                     else:
                                         st.markdown(f"**{lines[0]}**")
                                     
