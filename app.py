@@ -203,16 +203,32 @@ def extract_text_from_pdf(uploaded_file):
         for page in reader.pages:
             page_text = page.extract_text()
             if page_text:
+                # Preserve bullet points and special formatting
+                page_text = re.sub(r'(?<!\w)[•●♦](?!\w)', ' BULLET ', page_text)
+                page_text = re.sub(r'(\d+%)', ' PERCENT ', page_text)
+                
                 # Normalize whitespace but preserve paragraph breaks
                 page_text = re.sub(r'\s+', ' ', page_text)
                 page_text = re.sub(r'\. ', '.\n', page_text)  # Add line breaks after periods
                 text += page_text + '\n\n'
         
-        # Enhance section headers for better detection
-        text = re.sub(r'(?i)\b(education|academic|qualification)s?\b', '\nEDUCATION\n', text)
-        text = re.sub(r'(?i)\b(experience|work history|employment|professional)\b', '\nEXPERIENCE\n', text)
-        text = re.sub(r'(?i)\b(projects?|technical projects?)\b', '\nPROJECTS\n', text)
-        text = re.sub(r'(?i)\b(achievements?|accomplishments?|awards?)\b', '\nACHIEVEMENTS\n', text)
+        # Enhanced section header detection with more variations
+        section_mappings = {
+            'education': ['education', 'academic', 'qualifications', 'degrees'],
+            'experience': ['experience', 'work history', 'employment', 'professional experience', 'work experience'],
+            'skills': ['skills', 'technical skills', 'competencies', 'key skills'],
+            'certifications': ['certifications', 'licenses', 'credentials']
+        }
+        
+        for standard_name, variants in section_mappings.items():
+            pattern = r'(?i)\b(' + '|'.join(map(re.escape, variants)) + r')\b'
+            text = re.sub(pattern, f'\n{standard_name.upper()}\n', text)
+        
+        # Special handling for education section (GPA, degrees)
+        text = re.sub(r'(?i)(gpa|grade)[:\s]*(\d\.\d)(?:\s*\/\s*4\.0)?', 
+                     ' GPA_\2 ', text)
+        text = re.sub(r'(?i)(bach|master|phd|doctor|associate)[\w\s]* of', 
+                     ' DEGREE_\1 ', text)
         
         return text
     except Exception as e:
