@@ -670,35 +670,21 @@ if st.button(" Evaluate"):
                 # Experience
                 if ats_response['Experience'] and ats_response['Experience'] != "No experience details found":
                     with st.expander("Experience", expanded=True):
-                        # Split into individual experience entries
+                        # Parse experience entries
                         exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
-                        
                         for entry in exp_entries:
                             lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                            if not lines:
-                                continue
-                                
-                            # First line is position/company
-                            st.markdown(f"**{lines[0]}**")
-                            
-                            # Second line typically contains dates/location
-                            if len(lines) > 1 and any(char.isdigit() for char in lines[1]):
-                                st.markdown(f"*{lines[1]}*")
-                                bullet_start = 2
-                            else:
-                                bullet_start = 1
-                            
-                            # Handle bullet points (may be prefixed with • or -)
-                            for line in lines[bullet_start:]:
-                                # Clean bullet points and ensure consistent formatting
-                                clean_line = line.replace('•', '').replace('-', '').strip()
-                                if clean_line:
-                                    st.markdown(f"- {clean_line}")
+                            if lines:
+                                st.markdown(f"**{lines[0]}**")  # Position/Company
+                                if len(lines) > 1:
+                                    st.markdown(f"*{lines[1]}*")  # Dates
+                                for bullet in lines[2:]:
+                                    st.markdown(f"- {bullet}")  # Responsibilities
                 else:
                     st.warning("No experience section found in resume")
                 
                 # Projects
-                if ats_response['Projects']:
+                if ats_response['Projects'] and ats_response['Projects'] != "No projects found":
                     with st.expander("Projects", expanded=False):
                         # Parse project entries
                         proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
@@ -710,7 +696,7 @@ if st.button(" Evaluate"):
                                     st.markdown(f"- {detail}")  # Project details
                 
                 # Achievements
-                if ats_response['Achievements']:
+                if ats_response['Achievements'] and ats_response['Achievements'] != "No achievements found":
                     with st.expander("Achievements", expanded=False):
                         # Parse achievement entries
                         ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
