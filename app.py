@@ -406,7 +406,6 @@ def analyze_education(text):
     
     for i, line in enumerate(lines):
         line_lower = line.strip().lower()
-        
         # Look for degree indicators
         if any(keyword in line_lower for keyword in degree_keywords) or re.search(r'\b(20\d\d|\d{4})\b.*degree', line_lower):
             # Include context (university name, dates, etc.)
@@ -677,22 +676,10 @@ def get_ats_feedback(resume_text, jd_text):
 # Streamlit App Interface
 st.markdown("""
     <div style="text-align: center;">
-        <h1 style="color: #4361ee; font-size: 2.5rem;">Verq ATS Resume Evaluator</h1>
-        <p style="font-size: 1.2rem;">Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</p>
+        <h1 style="color: #4361ee;">Verq ATS Resume Evaluator</h1>
+        <h5>Upload your resume and job description to get instant feedback</h5>
     </div>
-""")
-
-# Input Section
-st.markdown("""
-    <style>
-        .stMarkdown p {
-            color: black !important;
-        }
-        .stButton>button {
-            color: white !important;
-        }
-    </style>
-""")
+    """, unsafe_allow_html=True)
 
 st.markdown("##  ATS Resume Evaluator")
 st.markdown("<h5>Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</h5>", unsafe_allow_html=True)
