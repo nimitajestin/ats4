@@ -198,12 +198,11 @@ def extract_text_from_pdf(uploaded_file):
         text = ""
         reader = PyPDF2.PdfReader(uploaded_file)
         for page in reader.pages:
-            page_text = page.extract_text() or ""
-            text += page_text + "\n\n"
-        return text.strip()
+            text += page.extract_text() + '\n'
+        return text
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
-        return ""
+        return None
 
 def extract_profile_summary(text):
     """Extract a comprehensive profile summary from resume text"""
@@ -267,68 +266,36 @@ def analyze_education(text):
     
     # Keywords for education detection
     edu_keywords = ['education', 'academic', 'qualification', 'university', 'college', 'institute', 'school']
-    degree_keywords = ['bachelor', 'master', 'phd', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc']
+    degree_keywords = ['bachelor', 'master', 'phd', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc', 'b.s', 'm.s', 'b.a', 'm.a', 'degree']
     
-    for line in lines:
-        line = line.strip()
+    # First try to find an explicit education section
+    for i, line in enumerate(lines):
+        line = line.strip().lower()
         if not line:
             continue
         
         # Check for education section start
-        if any(keyword.lower() in line.lower() for keyword in edu_keywords):
+        if any(keyword in line for keyword in edu_keywords) and len(line) < 30:
             is_education_section = True
-            if current_degree:
-                education_info.append(current_degree)
-                current_degree = {}
-            continue
-        
-        # Check for end of education section
-        if is_education_section and any(keyword.lower() in line.lower() for keyword in ['experience', 'work', 'skills']):
-            is_education_section = False
-            if current_degree:
-                education_info.append(current_degree)
-            break
-        
-        if is_education_section:
-            # Detect degree information
-            if any(keyword.lower() in line.lower() for keyword in degree_keywords):
-                if current_degree:
-                    education_info.append(current_degree)
-                current_degree = {'degree': line}
-            # Detect university/institution
-            elif any(keyword.lower() in line.lower() for keyword in ['university', 'college', 'institute']):
-                if current_degree:
-                    current_degree['institution'] = line
-                else:
-                    current_degree = {'institution': line}
-            # Detect graduation year
-            elif re.search(r'\b20\d{2}\b', line):
-                if current_degree:
-                    current_degree['year'] = re.search(r'\b20\d{2}\b', line).group()
-            # Detect GPA/grades
-            elif any(keyword.lower() in line.lower() for keyword in ['gpa', 'grade', 'cgpa']):
-                if current_degree:
-                    current_degree['grades'] = line
+            start_idx = i + 1
+            # Extract the next 15 lines as potential education content
+            education_content = '\n'.join(lines[start_idx:start_idx+15])
+            if education_content:
+                return education_content
     
-    # Add final degree if any
-    if current_degree:
-        education_info.append(current_degree)
+    # If no explicit section found, try to extract based on degree keywords
+    education_content = []
+    for i, line in enumerate(lines):
+        line_lower = line.strip().lower()
+        if any(keyword in line_lower for keyword in degree_keywords):
+            # Get this line and next 3 lines as a potential degree entry
+            degree_entry = '\n'.join([line.strip()] + [l.strip() for l in lines[i+1:i+4] if l.strip()])
+            education_content.append(degree_entry)
     
-    # Format education information
-    formatted_education = []
-    for edu in education_info:
-        parts = []
-        if 'degree' in edu:
-            parts.append(edu['degree'])
-        if 'institution' in edu:
-            parts.append(edu['institution'])
-        if 'year' in edu:
-            parts.append(f"({edu['year']})")
-        if 'grades' in edu:
-            parts.append(f"- {edu['grades']}")
-        formatted_education.append(' '.join(parts))
+    if education_content:
+        return '\n\n'.join(education_content)
     
-    return '\n'.join(formatted_education) if formatted_education else "No education details found"
+    return "No education details found"
 
 def analyze_experience(text):
     """Enhanced experience analysis with better structure and detail capture"""
@@ -338,72 +305,52 @@ def analyze_experience(text):
     current_role = {}
     
     # Keywords for experience detection
-    exp_keywords = ['experience', 'employment', 'work history']
-    role_keywords = ['engineer', 'developer', 'manager', 'analyst', 'consultant', 'architect']
+    exp_keywords = ['experience', 'employment', 'work history', 'professional experience']
+    role_keywords = ['engineer', 'developer', 'manager', 'analyst', 'consultant', 'architect', 'intern', 'scientist']
     
-    for line in lines:
-        line = line.strip()
+    # First try to find an explicit experience section
+    for i, line in enumerate(lines):
+        line = line.strip().lower()
         if not line:
             continue
         
         # Check for experience section start
-        if any(keyword.lower() in line.lower() for keyword in exp_keywords):
+        if any(keyword in line for keyword in exp_keywords) and len(line) < 30:
             is_experience_section = True
-            if current_role:
-                experience_info.append(current_role)
-                current_role = {}
-            continue
-        
-        # Check for end of experience section
-        if is_experience_section and any(keyword.lower() in line.lower() for keyword in ['education', 'skills', 'projects']):
-            is_experience_section = False
-            if current_role:
-                experience_info.append(current_role)
-            break
-        
-        if is_experience_section:
-            # Detect role/title
-            if any(keyword.lower() in line.lower() for keyword in role_keywords):
-                if current_role:
-                    experience_info.append(current_role)
-                current_role = {'title': line}
-            # Detect company name (usually follows the title)
-            elif current_role and 'company' not in current_role:
-                current_role['company'] = line
-            # Detect date range
-            elif re.search(r'\b(19|20)\d{2}\b', line):
-                if current_role:
-                    current_role['duration'] = line
-            # Detect responsibilities/achievements
-            elif line.startswith(('•', '-', '*')) or re.search(r'^\d+\.', line):
-                if 'responsibilities' not in current_role:
-                    current_role['responsibilities'] = []
-                current_role['responsibilities'].append(line)
+            start_idx = i + 1
+            # Find the end of the experience section (next section header or end of text)
+            end_idx = len(lines)
+            for j in range(start_idx, len(lines)):
+                if lines[j].strip() and lines[j].strip().lower() in ['education', 'projects', 'skills', 'achievements']:
+                    end_idx = j
+                    break
+            
+            # Extract experience content
+            experience_content = '\n'.join(lines[start_idx:end_idx])
+            if experience_content:
+                return experience_content
     
-    # Add final role if any
-    if current_role:
-        experience_info.append(current_role)
+    # If no explicit section found, try to extract based on role keywords and dates
+    experience_content = []
+    for i, line in enumerate(lines):
+        line_lower = line.strip().lower()
+        # Look for lines with job titles and dates (2020, 2021, etc.)
+        if (any(keyword in line_lower for keyword in role_keywords) or 
+            re.search(r'(20\d\d|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)', line_lower)):
+            # Get this line and next 5 lines as a potential experience entry
+            exp_entry = '\n'.join([line.strip()] + [l.strip() for l in lines[i+1:i+6] if l.strip()])
+            experience_content.append(exp_entry)
     
-    # Format experience information
-    formatted_experience = []
-    for exp in experience_info:
-        parts = []
-        if 'title' in exp:
-            parts.append(exp['title'])
-        if 'company' in exp:
-            parts.append(f"at {exp['company']}")
-        if 'duration' in exp:
-            parts.append(f"({exp['duration']})")
-        formatted_experience.append(' '.join(parts))
-        if 'responsibilities' in exp:
-            formatted_experience.extend([f"  {resp}" for resp in exp['responsibilities']])
+    if experience_content:
+        return '\n\n'.join(experience_content)
     
-    return '\n'.join(formatted_experience) if formatted_experience else "No experience details found"
+    return "No experience details found"
 
 def analyze_projects(text):
     projects = []
     
     # Split text into lines and look for project-related content
+{{ ... }}
     lines = text.split('\n')
     is_project_section = False
     current_project = []
@@ -506,26 +453,31 @@ def analyze_achievements(text):
 
 def extract_resume_sections(text):
     """Extract resume sections with improved structure and detail"""
-    sections = {'Profile Summary': '', 'Education': '', 'Experience': '', 'Projects': [], 'Achievements': []}
     if not text:
-        return sections
-    # Profile summary
-    sections['Profile Summary'] = extract_profile_summary(text)
-    # Locate section headers and split raw sections
-    pattern = re.compile(r'(?m)^(Education|Experience|Projects|Achievements)\s*$', flags=re.IGNORECASE)
-    matches = list(pattern.finditer(text))
-    for idx, m in enumerate(matches):
-        header = m.group(1).title()
-        start = m.end()
-        end = matches[idx+1].start() if idx+1 < len(matches) else len(text)
-        content = text[start:end].strip()
-        if header in ['Education', 'Experience']:
-            sections[header] = content
-        elif header == 'Projects':
-            sections['Projects'] = [e.strip() for e in content.split('\n\n') if e.strip()]
-        elif header == 'Achievements':
-            sections['Achievements'] = [e.strip() for e in content.split('\n\n') if e.strip()]
-    return sections
+        return {
+            'Profile Summary': '',
+            'Education': '',
+            'Experience': '',
+            'Projects': [],
+            'Achievements': []
+        }
+    
+    # Extract profile summary first
+    profile_summary = extract_profile_summary(text)
+    
+    # Extract other sections
+    education = analyze_education(text)
+    experience = analyze_experience(text)
+    projects = analyze_projects(text)
+    achievements = analyze_achievements(text)
+    
+    return {
+        'Profile Summary': profile_summary,
+        'Education': education,
+        'Experience': experience,
+        'Projects': projects,
+        'Achievements': achievements
+    }
 
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
@@ -662,11 +614,24 @@ if st.button(" Evaluate"):
                             for entry in edu_entries:
                                 lines = [line.strip() for line in entry.split('\n') if line.strip()]
                                 if lines:
-                                    st.markdown(f"**{lines[0]}**")
+                                    # Highlight degree information
+                                    if any(word in lines[0].lower() for word in ['bachelor', 'master', 'phd', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc', 'b.s', 'm.s']):
+                                        st.markdown(f"🎓 **{lines[0]}**")
+                                    else:
+                                        st.markdown(f"**{lines[0]}**")
+                                    
+                                    # Process remaining lines with special formatting
                                     for detail in lines[1:]:
-                                        st.markdown(f"- {detail}")
+                                        if any(word in detail.lower() for word in ['gpa', 'grade', 'score']):
+                                            st.markdown(f"📊 *{detail}*")
+                                        elif any(word in detail.lower() for word in ['university', 'college', 'institute', 'school']):
+                                            st.markdown(f"🏛️ {detail}")
+                                        elif re.search(r'\b(20\d\d|\d{4})\b', detail):
+                                            st.markdown(f"📅 *{detail}*")
+                                        else:
+                                            st.markdown(f"- {detail}")
                     else:
-                        st.warning("No education section found in resume")
+                        st.warning("Education section required but not found in resume. Please ensure your resume has a clearly labeled Education section.")
                 except Exception as e:
                     st.error(f"Error displaying education: {str(e)}")
                 
@@ -679,31 +644,62 @@ if st.button(" Evaluate"):
                             for entry in exp_entries:
                                 lines = [line.strip() for line in entry.split('\n') if line.strip()]
                                 if lines:
-                                    st.markdown(f"**{lines[0]}**")
+                                    # Highlight tech roles
+                                    if any(word in lines[0].lower() for word in ['engineer', 'developer', 'programmer', 'analyst', 'scientist', 'architect']):
+                                        st.markdown(f"👨‍💻 **{lines[0]}**")
+                                    else:
+                                        st.markdown(f"**{lines[0]}**")
+                                    
+                                    # Format dates/company info
                                     if len(lines) > 1:
-                                        st.markdown(f"*{lines[1]}*")
+                                        if re.search(r'\b(20\d\d|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b', lines[1].lower()):
+                                            st.markdown(f"📅 *{lines[1]}*")
+                                        else:
+                                            st.markdown(f"*{lines[1]}*")
+                                    
+                                    # Format bullet points with tech highlighting
                                     for bullet in lines[2:]:
-                                        st.markdown(f"- {bullet}")
+                                        clean_bullet = re.sub(r'^[•\-\*]\s*', '', bullet)
+                                        if any(tech in bullet.lower() for tech in ['python', 'java', 'javascript', 'react', 'node', 'aws', 'cloud', 'api']):
+                                            st.markdown(f"- 💻 {clean_bullet}")
+                                        elif any(word in bullet.lower() for word in ['lead', 'team', 'manage', 'collaborate']):
+                                            st.markdown(f"- 👥 {clean_bullet}")
+                                        else:
+                                            st.markdown(f"- {clean_bullet}")
                     else:
-                        st.warning("No experience section found in resume")
+                        st.warning("Experience section required but not found in resume. Please ensure your resume has a clearly labeled Experience section.")
                 except Exception as e:
                     st.error(f"Error displaying experience: {str(e)}")
                 
                 # Projects
-                if ats_response['Projects']:
-                    with st.expander("Projects", expanded=False):
-                        for proj in ats_response['Projects']:
-                            st.markdown(f"- {proj}")
-                else:
-                    st.warning("No projects section found in resume")
-
+                try:
+                    if ats_response.get('Projects') and isinstance(ats_response['Projects'], str) \
+                       and ats_response['Projects'].strip() not in ["", "No projects found"]:
+                        with st.expander("Projects", expanded=False):
+                            proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
+                            for entry in proj_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"**{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"- {detail}")
+                except Exception as e:
+                    st.error(f"Error displaying projects: {str(e)}")
+                
                 # Achievements
-                if ats_response['Achievements']:
-                    with st.expander("Achievements", expanded=False):
-                        for ach in ats_response['Achievements']:
-                            st.markdown(f"- {ach}")
-                else:
-                    st.warning("No achievements section found in resume")
+                try:
+                    if ats_response.get('Achievements') and isinstance(ats_response['Achievements'], str) \
+                       and ats_response['Achievements'].strip() not in ["", "No achievements found"]:
+                        with st.expander("Achievements", expanded=False):
+                            ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
+                            for entry in ach_entries:
+                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                if lines:
+                                    st.markdown(f"- **{lines[0]}**")
+                                    for detail in lines[1:]:
+                                        st.markdown(f"  - {detail}")
+                except Exception as e:
+                    st.error(f"Error displaying achievements: {str(e)}")
             
             # Tab 2: Skills Analysis
             with tab2:
@@ -819,3 +815,4 @@ if st.button(" Evaluate"):
                         st.markdown(f"{i}. {rec}")
     else:
         st.warning("Please upload a resume and enter a job description.")
+        
