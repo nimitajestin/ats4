@@ -1,5 +1,65 @@
 import PyPDF2
 import streamlit as st
+
+# Force light theme and set page config
+st.set_page_config(
+    page_title="Verq ATS Resume Evaluator",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Theme configuration to override all dark mode settings
+st.markdown("""
+    <style>
+        :root {
+            --primary-color: #1f497d;
+            --primary-light: rgba(31, 73, 125, 0.1);
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --border-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Force light theme */
+        body, .stApp {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        /* All text inputs */
+        .stTextInput > div > div > input,
+        .stTextArea > div > div > textarea,
+        .stSelectbox > div > div > select,
+        .stNumberInput > div > div > input {
+            background-color: white !important;
+            color: black !important;
+        }
+        
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        /* All buttons */
+        .stButton > button {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+        }
+        
+        /* Expanders and containers */
+        .stExpander, .stMetric {
+            background-color: var(--bg-secondary) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Disable dark mode completely */
+        [data-theme="dark"] {
+            display: none !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 import os
 import re
 import json
