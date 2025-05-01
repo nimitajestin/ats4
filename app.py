@@ -681,14 +681,14 @@ if st.button(" Evaluate"):
                                 if lines:
                                     # Highlight tech roles
                                     if any(word in lines[0].lower() for word in ['engineer', 'developer', 'programmer', 'analyst', 'scientist', 'architect']):
-                                        st.markdown(f"👨‍💻 **{lines[0]}**")
+                                        st.markdown(f" **{lines[0]}**")
                                     else:
                                         st.markdown(f"**{lines[0]}**")
                                     
                                     # Format dates/company info
                                     if len(lines) > 1:
                                         if re.search(r'\b(20\d\d|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b', lines[1].lower()):
-                                            st.markdown(f"📅 *{lines[1]}*")
+                                            st.markdown(f" *{lines[1]}*")
                                         else:
                                             st.markdown(f"*{lines[1]}*")
                                     
@@ -696,7 +696,7 @@ if st.button(" Evaluate"):
                                     for bullet in lines[2:]:
                                         clean_bullet = re.sub(r'^[•\-\*]\s*', '', bullet)
                                         if any(tech in bullet.lower() for tech in ['python', 'java', 'javascript', 'react', 'node', 'aws', 'cloud', 'api']):
-                                            st.markdown(f"- 💻 {clean_bullet}")
+                                            st.markdown(f"- {clean_bullet}")
                                         elif any(word in bullet.lower() for word in ['lead', 'team', 'manage', 'collaborate']):
                                             st.markdown(f"- 👥 {clean_bullet}")
                                         else:
