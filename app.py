@@ -350,7 +350,6 @@ def analyze_projects(text):
     projects = []
     
     # Split text into lines and look for project-related content
-{{ ... }}
     lines = text.split('\n')
     is_project_section = False
     current_project = []
