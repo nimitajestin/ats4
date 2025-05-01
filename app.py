@@ -195,10 +195,25 @@ def calculate_match_percentage(resume_text, jd_text):
 
 def extract_text_from_pdf(uploaded_file):
     try:
+        # Try different PDF extraction methods for better results
         text = ""
         reader = PyPDF2.PdfReader(uploaded_file)
+        
+        # First pass: extract text with standard method
         for page in reader.pages:
-            text += page.extract_text() + '\n'
+            page_text = page.extract_text()
+            if page_text:
+                # Normalize whitespace but preserve paragraph breaks
+                page_text = re.sub(r'\s+', ' ', page_text)
+                page_text = re.sub(r'\. ', '.\n', page_text)  # Add line breaks after periods
+                text += page_text + '\n\n'
+        
+        # Enhance section headers for better detection
+        text = re.sub(r'(?i)\b(education|academic|qualification)s?\b', '\nEDUCATION\n', text)
+        text = re.sub(r'(?i)\b(experience|work history|employment|professional)\b', '\nEXPERIENCE\n', text)
+        text = re.sub(r'(?i)\b(projects?|technical projects?)\b', '\nPROJECTS\n', text)
+        text = re.sub(r'(?i)\b(achievements?|accomplishments?|awards?)\b', '\nACHIEVEMENTS\n', text)
+        
         return text
     except Exception as e:
         st.error(f"Error reading PDF: {str(e)}")
@@ -259,90 +274,111 @@ def extract_profile_summary(text):
 
 def analyze_education(text):
     """Enhanced education analysis with better structure and detail capture"""
-    education_info = []
+    # First look for EDUCATION section header (normalized by extract_text_from_pdf)
+    edu_pattern = re.compile(r'EDUCATION\s*\n(.*?)(?:\n\n|\n[A-Z]{3,}|$)', re.DOTALL | re.IGNORECASE)
+    edu_match = edu_pattern.search(text)
+    
+    if edu_match:
+        # Found explicit education section
+        edu_text = edu_match.group(1).strip()
+        if edu_text:
+            # Clean up the extracted text
+            edu_text = re.sub(r'\n{3,}', '\n\n', edu_text)  # Normalize multiple newlines
+            return edu_text
+    
+    # Fallback: search by degree keywords
+    degree_keywords = ['bachelor', 'master', 'phd', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc', 
+                      'b.s', 'm.s', 'b.a', 'm.a', 'degree', 'diploma']
+    
     lines = text.split('\n')
-    is_education_section = False
-    current_degree = {}
+    education_entries = []
     
-    # Keywords for education detection
-    edu_keywords = ['education', 'academic', 'qualification', 'university', 'college', 'institute', 'school']
-    degree_keywords = ['bachelor', 'master', 'phd', 'b.tech', 'b.e', 'm.tech', 'bsc', 'msc', 'b.s', 'm.s', 'b.a', 'm.a', 'degree']
-    
-    # First try to find an explicit education section
-    for i, line in enumerate(lines):
-        line = line.strip().lower()
-        if not line:
-            continue
-        
-        # Check for education section start
-        if any(keyword in line for keyword in edu_keywords) and len(line) < 30:
-            is_education_section = True
-            start_idx = i + 1
-            # Extract the next 15 lines as potential education content
-            education_content = '\n'.join(lines[start_idx:start_idx+15])
-            if education_content:
-                return education_content
-    
-    # If no explicit section found, try to extract based on degree keywords
-    education_content = []
     for i, line in enumerate(lines):
         line_lower = line.strip().lower()
-        if any(keyword in line_lower for keyword in degree_keywords):
-            # Get this line and next 3 lines as a potential degree entry
-            degree_entry = '\n'.join([line.strip()] + [l.strip() for l in lines[i+1:i+4] if l.strip()])
-            education_content.append(degree_entry)
+        # Look for degree indicators
+        if any(keyword in line_lower for keyword in degree_keywords) or re.search(r'\b(20\d\d|\d{4})\b.*degree', line_lower):
+            # Include context (university name, dates, etc.)
+            context_start = max(0, i-1)
+            context_end = min(len(lines), i+5)  # Get a few lines after for context
+            degree_entry = '\n'.join([l.strip() for l in lines[context_start:context_end] if l.strip()])
+            education_entries.append(degree_entry)
     
-    if education_content:
-        return '\n\n'.join(education_content)
+    # If we found entries, join them
+    if education_entries:
+        return '\n\n'.join(education_entries)
+    
+    # Last resort: look for university names
+    university_keywords = ['university', 'college', 'institute', 'school']
+    for i, line in enumerate(lines):
+        line_lower = line.strip().lower()
+        if any(keyword in line_lower for keyword in university_keywords):
+            context_start = max(0, i-1)
+            context_end = min(len(lines), i+3)
+            edu_entry = '\n'.join([l.strip() for l in lines[context_start:context_end] if l.strip()])
+            education_entries.append(edu_entry)
+    
+    if education_entries:
+        return '\n\n'.join(education_entries)
     
     return "No education details found"
 
 def analyze_experience(text):
     """Enhanced experience analysis with better structure and detail capture"""
-    experience_info = []
+    # First look for EXPERIENCE section header (normalized by extract_text_from_pdf)
+    exp_pattern = re.compile(r'EXPERIENCE\s*\n(.*?)(?:\n\n|\n[A-Z]{3,}|$)', re.DOTALL | re.IGNORECASE)
+    exp_match = exp_pattern.search(text)
+    
+    if exp_match:
+        # Found explicit experience section
+        exp_text = exp_match.group(1).strip()
+        if exp_text:
+            # Clean up the extracted text
+            exp_text = re.sub(r'\n{3,}', '\n\n', exp_text)  # Normalize multiple newlines
+            # Split into entries if there are clear separations
+            entries = re.split(r'(?:\n\n+|\n(?=\d{4}\s*-|\d{4}\s*to|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))', exp_text)
+            return '\n\n'.join([entry.strip() for entry in entries if entry.strip()])
+    
+    # Fallback: search by role keywords and date patterns
+    role_keywords = ['engineer', 'developer', 'programmer', 'manager', 'analyst', 'consultant', 
+                    'architect', 'intern', 'scientist', 'designer', 'administrator', 'specialist']
+    
     lines = text.split('\n')
-    is_experience_section = False
-    current_role = {}
+    experience_entries = []
     
-    # Keywords for experience detection
-    exp_keywords = ['experience', 'employment', 'work history', 'professional experience']
-    role_keywords = ['engineer', 'developer', 'manager', 'analyst', 'consultant', 'architect', 'intern', 'scientist']
-    
-    # First try to find an explicit experience section
-    for i, line in enumerate(lines):
-        line = line.strip().lower()
-        if not line:
-            continue
-        
-        # Check for experience section start
-        if any(keyword in line for keyword in exp_keywords) and len(line) < 30:
-            is_experience_section = True
-            start_idx = i + 1
-            # Find the end of the experience section (next section header or end of text)
-            end_idx = len(lines)
-            for j in range(start_idx, len(lines)):
-                if lines[j].strip() and lines[j].strip().lower() in ['education', 'projects', 'skills', 'achievements']:
-                    end_idx = j
-                    break
-            
-            # Extract experience content
-            experience_content = '\n'.join(lines[start_idx:end_idx])
-            if experience_content:
-                return experience_content
-    
-    # If no explicit section found, try to extract based on role keywords and dates
-    experience_content = []
+    # First pass: look for job titles and company names
     for i, line in enumerate(lines):
         line_lower = line.strip().lower()
-        # Look for lines with job titles and dates (2020, 2021, etc.)
-        if (any(keyword in line_lower for keyword in role_keywords) or 
-            re.search(r'(20\d\d|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)', line_lower)):
-            # Get this line and next 5 lines as a potential experience entry
-            exp_entry = '\n'.join([line.strip()] + [l.strip() for l in lines[i+1:i+6] if l.strip()])
-            experience_content.append(exp_entry)
+        
+        # Look for job titles
+        if any(keyword in line_lower for keyword in role_keywords):
+            # Get context around this line
+            context_start = max(0, i-1)
+            context_end = min(len(lines), i+8)  # Get more lines for experience details
+            
+            # Look for date patterns in nearby lines
+            has_date = False
+            for j in range(context_start, context_end):
+                if j < len(lines) and re.search(r'(20\d\d|19\d\d|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|present)', lines[j].lower()):
+                    has_date = True
+                    break
+            
+            if has_date:
+                exp_entry = '\n'.join([l.strip() for l in lines[context_start:context_end] if l.strip()])
+                experience_entries.append(exp_entry)
     
-    if experience_content:
-        return '\n\n'.join(experience_content)
+    # Second pass: look for date patterns if we didn't find enough entries
+    if len(experience_entries) < 2:
+        for i, line in enumerate(lines):
+            line_lower = line.strip().lower()
+            # Look for date patterns (2020-2022, 2019 to Present, etc.)
+            if re.search(r'(20\d\d|19\d\d)\s*[-–—to]\s*(20\d\d|19\d\d|present|current|now)', line_lower) and not any(entry.lower().find(line_lower) >= 0 for entry in experience_entries):
+                context_start = max(0, i-2)  # Include potential title line
+                context_end = min(len(lines), i+6)  # Include responsibilities
+                exp_entry = '\n'.join([l.strip() for l in lines[context_start:context_end] if l.strip()])
+                experience_entries.append(exp_entry)
+    
+    if experience_entries:
+        return '\n\n'.join(experience_entries)
     
     return "No experience details found"
 
