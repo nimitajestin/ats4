@@ -487,7 +487,7 @@ def get_ats_feedback(resume_text, jd_text):
         # Extract all sections from resume
         sections = extract_resume_sections(resume_text)
         
-        # Calculate match percentage
+        # Calculate match percentage and get match data
         match_data = calculate_match_percentage(resume_text, jd_text)
         
         # Extract keywords and skills
@@ -497,6 +497,29 @@ def get_ats_feedback(resume_text, jd_text):
         # Calculate matched and missing keywords
         matched_keywords = list(set(resume_keywords) & set(jd_keywords))
         missing_keywords = list(set(jd_keywords) - set(resume_keywords))
+        
+        # Create recommendations based on analysis
+        recommendations = []
+        
+        # Add keyword-based recommendations
+        if missing_keywords:
+            recommendations.append(f"Add missing keywords: {', '.join(missing_keywords[:3])}")
+        
+        # Add section-based recommendations
+        if not sections['Projects']:
+            recommendations.append("Add a projects section to showcase your practical experience")
+        if not sections['Achievements']:
+            recommendations.append("Include quantifiable achievements to demonstrate impact")
+        
+        # Add skill-based recommendations
+        if match_data['score'] < 70:
+            recommendations.append("Focus on developing skills that align with job requirements")
+        
+        # Add general recommendations
+        recommendations.extend([
+            "Ensure all experiences are quantified with metrics",
+            "Keep resume format ATS-friendly"
+        ])
         
         return {
             "JD Match": f"{match_data['score']}%",
@@ -508,14 +531,9 @@ def get_ats_feedback(resume_text, jd_text):
             "Key Strengths": matched_keywords[:5],
             "Missing Keywords": missing_keywords[:5],
             "Category Matches": match_data['category_scores'],
-            "Recommendations": [
-                "Add missing keywords to your resume",
-                "Quantify your achievements with metrics",
-                "Add more detail to your project descriptions",
-                "Highlight relevant technical skills",
-                "Include certifications if available"
-            ]
+            "Recommendations": recommendations
         }
+        
     except Exception as e:
         st.error(f"Error in text processing: {str(e)}")
         return None
@@ -619,6 +637,7 @@ if st.button(" Evaluate"):
             with tab2:
                 st.markdown("### Skills Analysis")
                 
+                # Display key strengths
                 st.markdown("#### Key Strengths")
                 if ats_response['Key Strengths']:
                     for strength in ats_response['Key Strengths']:
@@ -626,6 +645,7 @@ if st.button(" Evaluate"):
                 else:
                     st.warning("No key strengths identified")
                 
+                # Display missing keywords
                 st.markdown("#### Missing Keywords")
                 if ats_response['Missing Keywords']:
                     for keyword in ats_response['Missing Keywords']:
@@ -633,78 +653,75 @@ if st.button(" Evaluate"):
                 else:
                     st.success("No critical missing keywords")
                 
+                # Display category matches
                 st.markdown("#### Category Matches")
                 for category, score in ats_response['Category Matches'].items():
                     color = 'green' if score >= 80 else 'orange' if score >= 60 else 'red'
                     st.markdown(f"<span style='color:{color}'>{category}: {score}%</span>", unsafe_allow_html=True)
             
-            # Tab 3: Recommendations - Comprehensive feedback and suggestions
+            # Tab 3: Recommendations
             with tab3:
                 st.markdown("### Personalized Recommendations")
                 
-                # Resume Structure Evaluation
-                with st.expander("📄 Resume Structure", expanded=True):
+                # Resume Structure Analysis
+                with st.expander("Resume Structure Evaluation", expanded=True):
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        if ats_response.get('Projects'):
-                            st.success("✅ Strong Projects Section")
-                            st.metric("Projects Listed", len(ats_response['Projects']))
+                        if ats_response['Projects']:
+                            st.success("✔ Strong projects section")
+                            st.markdown(f"• {len(ats_response['Projects'])} relevant projects listed")
                         else:
-                            st.error("❌ Missing Projects Section")
+                            st.error("✘ Missing projects section")
                     
                     with col2:
-                        if ats_response.get('Achievements'):
-                            st.success("✅ Achievements Highlighted")
-                            st.metric("Key Achievements", len(ats_response['Achievements']))
+                        if ats_response['Achievements']:
+                            st.success("✔ Achievements well highlighted")
+                            st.markdown(f"• {len(ats_response['Achievements'])} quantifiable achievements")
                         else:
-                            st.error("❌ Missing Achievements Section")
-
-                    st.divider()
-                    st.markdown("**Improvement Tips:**")
+                            st.error("✘ Missing achievements section")
+                    
+                    st.info("💡 Structure Improvement Tips:")
                     st.markdown("""
-                    - Use 3-5 bullet points per section
-                    - Keep resume length 1-2 pages
-                    - Start with strong action verbs
-                    - Include quantifiable metrics
-                    - Use standard section headers
+                    - **Bullet points**: Use for readability (3-5 per section)
+                    - **Length**: Keep to 1-2 pages maximum
+                    - **Action verbs**: Use strong verbs (developed, optimized, led)
+                    - **Metrics**: Quantify achievements (e.g., "Improved performance by 30%")
+                    - **White space**: Ensure proper spacing between sections
                     """)
-
-                # Skill Development Section
-                with st.expander("📚 Skill Development", expanded=True):
+                
+                # Skill Development Recommendations
+                with st.expander("Skill Enhancement", expanded=True):
                     if ats_response['Missing Keywords']:
-                        cols = st.columns(2)
-                        with cols[0]:
-                            st.error("🚨 Missing Key Skills")
-                            for skill in ats_response['Missing Keywords'][:3]:
-                                st.markdown(f"- {skill}")
+                        st.error("🔍 Key Skills to Develop:")
+                        for keyword in ats_response['Missing Keywords'][:5]:
+                            st.markdown(f"- {keyword}")
                         
-                        with cols[1]:
-                            st.info("💡 Learning Resources")
-                            st.markdown("""
-                            - [Coursera](https://www.coursera.org)
-                            - [Udemy](https://www.udemy.com)
-                            - [FreeCodeCamp](https://freecodecamp.org)
-                            """)
+                        st.info("📚 Recommended Learning Resources:")
+                        st.markdown("""
+                        - [FreeCodeCamp](https://www.freecodecamp.org/) - Free coding tutorials
+                        - [Coursera](https://www.coursera.org/) - Professional certificates  
+                        - [Udemy](https://www.udemy.com/) - Affordable courses
+                        - [LinkedIn Learning](https://www.linkedin.com/learning/) - Career-focused skills
+                        """)
                     else:
-                        st.success("🎯 Excellent Skill Alignment!")
-
+                        st.success("🎯 Excellent skill match with job requirements!")
+                
                 # ATS Optimization Tips
-                with st.expander("🤖 ATS Optimization", expanded=True):
+                with st.expander("ATS Optimization Tips", expanded=True):
                     st.markdown("""
-                    **Top ATS Tips:**
-                    - Use exact job title match
-                    - Include keywords from description
-                    - Avoid graphics/tables
-                    - Use .docx or .pdf format
-                    - Keep formatting simple
+                    **To improve your ATS score:**
+                    - Include missing keywords naturally in your resume
+                    - Match job title/headline with the position
+                    - Use standard section headings (Experience, Education)
+                    - Avoid graphics/tables that scanners can't read
+                    - Save as .docx or .pdf (avoid images/scanned PDFs)
                     """)
-
+                
                 # Action Items
-                st.markdown("---")
-                st.markdown("### Action Items")
                 if ats_response['Recommendations']:
+                    st.markdown("### Action Items")
                     for i, rec in enumerate(ats_response['Recommendations'], 1):
-                        st.markdown(f"{i}. **{rec}**")
-                else:
-                    st.info("No additional recommendations")
+                        st.markdown(f"{i}. {rec}")
+    else:
+        st.warning("Please upload a resume and enter a job description.")
