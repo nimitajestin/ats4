@@ -20,17 +20,17 @@ st.markdown("""
             --bg-secondary: #f5f5f5;
             --border-color: rgba(0, 0, 0, 0.1);
         }
-
+        
         /* Force light theme */
         .stApp {
             background-color: var(--bg-primary) !important;
         }
-
+        
         body, .stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6 {
             color: var(--text-primary) !important;
         }
-
-        /* Inputs */
+        
+        /* All text inputs */
         .stTextInput > div > div > input,
         .stTextArea > div > div > textarea,
         .stSelectbox > div > div > select,
@@ -38,78 +38,75 @@ st.markdown("""
             background-color: white !important;
             color: black !important;
         }
-
-        /* File uploader */
+        
+        /* File uploader - comprehensive targeting */
         .stFileUploader {
             color: black !important;
         }
-
+        
+        /* Main uploader box */
         .stFileUploader > div {
             background-color: white !important;
             color: black !important;
         }
-
+        
+        /* Drop area */
         .stFileUploader > div > div {
             background-color: white !important;
             border: 1px dashed #cccccc !important;
             color: white !important;
         }
-
+        
+        /* Upload box */
         [data-testid="stFileUploader"] {
             background-color: white !important;
             color: white !important;
         }
-
+        
+        /* Upload box text */
         [data-testid="stFileUploader"] p {
             color: #4361ee !important;
         }
-
+        
+        /* Browse files button */
         .stFileUploader button {
             background-color: white !important;
             color: black !important;
             border: 1px solid #cccccc !important;
         }
-
+        
+        /* Hover states */
         .stFileUploader > div > div:hover,
         .stFileUploader button:hover {
             background-color: #f5f5f5 !important;
         }
-
+        
         .stFileUploader > div > div > svg {
             fill: black !important;
         }
-
+        
         /* Sidebar */
         [data-testid="stSidebar"] {
             background-color: var(--bg-secondary) !important;
             color: var(--text-primary) !important;
         }
-
-        /* Buttons */
+        
+        /* All buttons */
         .stButton > button {
             background-color: var(--primary-color) !important;
             color: white !important;
         }
-
+        
         /* Expanders and containers */
         .stExpander, .stMetric {
             background-color: var(--bg-secondary) !important;
             border-color: var(--border-color) !important;
             color: var(--text-primary) !important;
         }
-
-        /* Disable dark mode */
+        
+        /* Disable dark mode completely */
         [data-theme="dark"] {
             display: none !important;
-        }
-
-        /* Custom overrides for text content */
-        .white-text-evaluate {
-            color: white !important;
-        }
-
-        .black-text-jd {
-            color: black !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -409,6 +406,7 @@ def analyze_education(text):
     
     for i, line in enumerate(lines):
         line_lower = line.strip().lower()
+        
         # Look for degree indicators
         if any(keyword in line_lower for keyword in degree_keywords) or re.search(r'\b(20\d\d|\d{4})\b.*degree', line_lower):
             # Include context (university name, dates, etc.)
@@ -679,10 +677,22 @@ def get_ats_feedback(resume_text, jd_text):
 # Streamlit App Interface
 st.markdown("""
     <div style="text-align: center;">
-        <h1 style="color: #4361ee;">Verq ATS Resume Evaluator</h1>
-        <h5>Upload your resume and job description to get instant feedback</h5>
+        <h1 style="color: #4361ee; font-size: 2.5rem;">Verq ATS Resume Evaluator</h1>
+        <p style="font-size: 1.2rem;">Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</p>
     </div>
-    """, unsafe_allow_html=True)
+""")
+
+# Input Section
+st.markdown("""
+    <style>
+        .stMarkdown p {
+            color: black !important;
+        }
+        .stButton>button {
+            color: white !important;
+        }
+    </style>
+""")
 
 st.markdown("##  ATS Resume Evaluator")
 st.markdown("<h5>Upload your resume and job description to receive a tailored match percentage, keyword analysis, and improvement suggestions.</h5>", unsafe_allow_html=True)
