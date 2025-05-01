@@ -126,6 +126,18 @@ st.markdown("""
         div.stButton > button > div > p {
             color: white !important;
         }
+        
+        /* Container styling */
+        .st-emotion-cache-seewz2 {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            font-style: italic;
+        }
+        
+        /* Tab header styling */
+        .stTabs button div p {
+            font-size: 1.3rem !important;
+            font-weight: 500;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -679,7 +691,6 @@ def get_ats_feedback(resume_text, jd_text):
             "Education": sections['Education'],
             "Experience": sections['Experience'],
             "Projects": sections['Projects'],
-            "Achievements": sections['Achievements'],
             "JD_Categories": jd_categories,
             "Resume_Categories": resume_categories,
             "Category_Matches": match_data['category_scores'],
@@ -751,12 +762,12 @@ if st.button(" Evaluate"):
             
             # Tab 1: Overview with improved structure
             with tab1:
-                st.markdown("### Overview")
+                st.markdown("<h3 style='font-size: 1.5rem; margin-bottom: 1rem;'>Overview</h3>", unsafe_allow_html=True)
                 
                 # Match Score Card
                 col1, col2 = st.columns([1,3])
                 with col1:
-                    st.metric("Match Score", ats_response['JD Match'])
+                    st.markdown("<div style='color: black;'>" + ats_response['JD Match'] + "</div>", unsafe_allow_html=True)
                 with col2:
                     score = float(ats_response['JD Match'].rstrip('%'))
                     if score >= 80:
@@ -772,7 +783,8 @@ if st.button(" Evaluate"):
                 try:
                     if ats_response.get('Profile Summary') and isinstance(ats_response['Profile Summary'], str) \
                        and ats_response['Profile Summary'].strip() not in ["", "No profile summary found"]:
-                        with st.expander("Profile Summary", expanded=True):
+                        st.markdown("<h3 style='font-size: 1.3rem;'>Profile Summary</h3>", unsafe_allow_html=True)
+                        with st.expander("", expanded=True):
                             st.write(ats_response['Profile Summary'])
                     else:
                         st.warning("No profile summary found in resume")
@@ -783,7 +795,8 @@ if st.button(" Evaluate"):
                 try:
                     if ats_response.get('Education') and isinstance(ats_response['Education'], str) \
                        and ats_response['Education'].strip() not in ["", "No education details found"]:
-                        with st.expander("Education", expanded=True):
+                        st.markdown("<h3 style='font-size: 1.3rem;'>Education</h3>", unsafe_allow_html=True)
+                        with st.expander("", expanded=True):
                             edu_entries = [entry.strip() for entry in ats_response['Education'].split('\n\n') if entry.strip()]
                             for entry in edu_entries:
                                 lines = [line.strip() for line in entry.split('\n') if line.strip()]
@@ -813,7 +826,8 @@ if st.button(" Evaluate"):
                 try:
                     if ats_response.get('Experience') and isinstance(ats_response['Experience'], str) \
                        and ats_response['Experience'].strip() not in ["", "No experience details found"]:
-                        with st.expander("Experience", expanded=True):
+                        st.markdown("<h3 style='font-size: 1.3rem;'>Experience</h3>", unsafe_allow_html=True)
+                        with st.expander("", expanded=True):
                             exp_entries = [entry.strip() for entry in ats_response['Experience'].split('\n\n') if entry.strip()]
                             for entry in exp_entries:
                                 lines = [line.strip() for line in entry.split('\n') if line.strip()]
@@ -848,44 +862,32 @@ if st.button(" Evaluate"):
                 # Projects
                 try:
                     if ats_response.get('Projects') and ats_response['Projects'] and ats_response['Projects'] not in ["", "No projects found"]:
-                        with st.expander("Projects", expanded=False):
-                            proj_entries = [entry.strip() for entry in ats_response['Projects'].split('\n\n') if entry.strip()]
-                            for entry in proj_entries:
-                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                if lines:
-                                    st.markdown(f"**{lines[0]}**")
-                                    for detail in lines[1:]:
-                                        st.markdown(f"- {detail}")
+                        st.markdown("<h3 class='subheader'>Projects</h3>", unsafe_allow_html=True)
+                        with st.expander("", expanded=True):
+                            for entry in ats_response['Projects']:
+                                if isinstance(entry, str) and entry.strip():
+                                    lines = [line.strip() for line in entry.split('\n') if line.strip()]
+                                    if lines:
+                                        st.markdown(f"**{lines[0]}**")
+                                        for detail in lines[1:]:
+                                            st.markdown(f"- {detail}")
                 except Exception as e:
                     st.error(f"Error displaying projects: {str(e)}")
-                
-                # Achievements
-                try:
-                    if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
-                        with st.expander("Achievements", expanded=False):
-                            ach_entries = [entry.strip() for entry in ats_response['Achievements'].split('\n\n') if entry.strip()]
-                            for entry in ach_entries:
-                                lines = [line.strip() for line in entry.split('\n') if line.strip()]
-                                if lines:
-                                    st.markdown(f"- **{lines[0]}**")
-                                    for detail in lines[1:]:
-                                        st.markdown(f"  - {detail}")
-                except Exception as e:
-                    st.error(f"Error displaying achievements: {str(e)}")
             
             # Tab 2: Skills Analysis
             with tab2:
-                st.markdown("### Skills Analysis")
+                st.markdown("<h3 style='font-size: 1.5rem; margin-bottom: 1rem;'>Skills Analysis</h3>", unsafe_allow_html=True)
                 
                 # Detailed skills breakdown
-                st.markdown("#### Skills Breakdown")
+                st.markdown("<h3 style='font-size: 1.3rem;'>Skills Breakdown</h3>", unsafe_allow_html=True)
                 
                 for category in DOMAIN_CATEGORIES:
                     if category in ats_response['Category_Matches']:
                         match_percent = ats_response['Category_Matches'][category]
                         color = "green" if match_percent >= 80 else "orange" if match_percent >= 60 else "red"
                         
-                        with st.expander(f"{category} ({match_percent}%)", expanded=True):
+                        st.markdown(f"<h3 style='font-size: 1.3rem; margin-bottom: 0.5rem;'>{category} ({match_percent}%)</h3>", unsafe_allow_html=True)
+                        with st.expander("", expanded=True):
                             col1, col2 = st.columns(2)
                             
                             # Job Description Skills
@@ -923,10 +925,11 @@ if st.button(" Evaluate"):
             
             # Tab 3: Recommendations
             with tab3:
-                st.markdown("### Personalized Recommendations")
+                st.markdown("<h3 style='color: #4361ee; font-size: 1.5rem; margin-bottom: 1rem;'>Recommendations</h3>", unsafe_allow_html=True)
                 
-                # Resume Structure Analysis
-                with st.expander("Resume Structure Evaluation", expanded=True):
+                # Resume Structure Evaluation
+                st.markdown("<h3 style='color: black; font-size: 1.3rem;'>Resume Structure Evaluation</h3>", unsafe_allow_html=True)
+                with st.expander("", expanded=True):
                     col1, col2 = st.columns(2)
                     
                     with col1:
@@ -937,53 +940,45 @@ if st.button(" Evaluate"):
                             st.error("✘ Missing projects section")
                     
                     with col2:
-                        if ats_response.get('Achievements') and ats_response['Achievements'] and ats_response['Achievements'] not in ["", "No achievements found"]:
-                            st.success("✔ Achievements well highlighted")
-                            st.markdown(f"• {len(ats_response['Achievements'])} quantifiable achievements")
-                        else:
-                            st.error("✘ Missing achievements section")
-                    
-                    st.info(" Structure Improvement Tips:")
-                    st.markdown("""
-                    - **Bullet points**: Use for readability (3-5 per section)
-                    - **Length**: Keep to 1-2 pages maximum
-                    - **Action verbs**: Use strong verbs (developed, optimized, led)
-                    - **Metrics**: Quantify achievements (e.g., "Improved performance by 30%")
-                    - **White space**: Ensure proper spacing between sections
-                    """)
-                
-                # Skill Development Recommendations
-                with st.expander("Skill Enhancement", expanded=True):
-                    if ats_response.get('Missing_Keywords') and ats_response['Missing_Keywords']:
-                        st.error(" Key Skills to Develop:")
-                        for keyword in ats_response['Missing_Keywords'][:5]:
-                            st.markdown(f"- {keyword}")
-                        
-                        st.info(" Recommended Learning Resources:")
+                        st.info(" Structure Improvement Tips:")
                         st.markdown("""
-                        - [FreeCodeCamp](https://www.freecodecamp.org/) - Free coding tutorials
-                        - [Coursera](https://www.coursera.org/) - Professional certificates  
-                        - [Udemy](https://www.udemy.com/) - Affordable courses
-                        - [LinkedIn Learning](https://www.linkedin.com/learning/) - Career-focused skills
+                        - **Bullet points**: Use for readability (3-5 per section)
+                        - **Length**: Keep to 1-2 pages maximum
+                        - **Action verbs**: Use strong verbs (developed, optimized, led)
+                        - **Metrics**: Quantify achievements (e.g., "Improved performance by 30%")
+                        - **White space**: Ensure proper spacing between sections
                         """)
+                
+                # Skill Enhancement
+                st.markdown("<h3 style='color: black; font-size: 1.3rem;'>Skill Enhancement</h3>", unsafe_allow_html=True)
+                with st.expander("", expanded=True):
+                    if ats_response.get('Missing_Keywords'):
+                        st.markdown("<p style='color: #4361ee; font-weight: bold;'>Key Skills to Develop:</p>", unsafe_allow_html=True)
+                        for keyword in ats_response['Missing_Keywords'][:5]:
+                            st.markdown(f"<p style='color: black;'>- {keyword}</p>", unsafe_allow_html=True)
+                        
+                        st.markdown("""
+                        <p style='color: #4361ee; font-weight: bold;'>Recommended Resources:</p>
+                        <p style='color: black;'>
+                            <a href='https://www.freecodecamp.org/' target='_blank'>FreeCodeCamp</a> - Free coding tutorials<br>
+                            <a href='https://www.coursera.org/' target='_blank'>Coursera</a> - Professional certificates<br>
+                            <a href='https://www.udemy.com/' target='_blank'>Udemy</a> - Affordable courses<br>
+                            <a href='https://www.linkedin.com/learning/' target='_blank'>LinkedIn Learning</a> - Career-focused skills
+                        </p>
+                        """, unsafe_allow_html=True)
                     else:
                         st.success(" Excellent skill match with job requirements!")
                 
                 # ATS Optimization Tips
-                with st.expander("ATS Optimization Tips", expanded=True):
+                st.markdown("<h3 style='color: black; font-size: 1.3rem;'>ATS Optimization Tips</h3>", unsafe_allow_html=True)
+                with st.expander("", expanded=True):
                     st.markdown("""
-                    **To improve your ATS score:**
-                    - Include missing keywords naturally in your resume
-                    - Match job title/headline with the position
-                    - Use standard section headings (Experience, Education)
-                    - Avoid graphics/tables that scanners can't read
-                    - Save as .docx or .pdf (avoid images/scanned PDFs)
-                    """)
-                
-                # Action Items
-                if ats_response.get('Missing_Keywords') and ats_response['Missing_Keywords']:
-                    st.markdown("### Action Items")
-                    for i, rec in enumerate(ats_response['Missing_Keywords'], 1):
-                        st.markdown(f"{i}. {rec}")
+                    <p style='color: black;'>To improve your ATS score:</p>
+                    <p style='color: black;'>- Include missing keywords naturally in your resume<br>
+                    - Match job title/headline with the position<br>
+                    - Use standard section headings (Experience, Education)<br>
+                    - Avoid graphics/tables that scanners can't read<br>
+                    - Save as .docx or .pdf (avoid images/scanned PDFs)</p>
+                    """, unsafe_allow_html=True)
     else:
         st.warning("Please upload a resume and enter a job description.")
