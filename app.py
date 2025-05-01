@@ -1,11 +1,31 @@
 import PyPDF2
 import streamlit as st
-import os                  
-import re                 
-import json               
-from collections import Counter  
-from sklearn.feature_extraction.text import TfidfVectorizer  
-from sklearn.metrics.pairwise import cosine_similarity      
+st.set_page_config(
+    page_title="Verq ATS Resume Evaluator",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Set theme configuration
+st.markdown("""
+    <style>
+        .stApp {
+            background-color: white;
+        }
+        .stTextInput > div > div > input,
+        .stTextArea > div > div > textarea {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+    </style>
+""")
+
+import os
+import re
+import json
+from collections import Counter
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 import plotly.express as px
 
@@ -563,14 +583,6 @@ def get_ats_feedback(resume_text, jd_text):
         return None
 
 # Streamlit App Interface
-st.set_page_config(page_title="Verq ATS Resume Evaluator", layout="wide")
-st.markdown("""
-    <style>
-        .stApp {
-            background-color: white;
-        }
-    </style>
-""")
 st.markdown("""
     <div style="text-align: center;">
         <h1 style="color: #1f497d;">Verq ATS Resume Evaluator</h1>
