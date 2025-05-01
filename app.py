@@ -695,7 +695,7 @@ with st.container():
         st.markdown("<h6>Upload Resume (PDF)</h6>", unsafe_allow_html=True)
         uploaded_resume = st.file_uploader("", type=["pdf"])
 
-if st.button(" Evaluate", help="Click to analyze your resume", style="background-color: #4361ee; color: white"):
+if st.button(" Evaluate"):
     if uploaded_resume and jd_input.strip():
         with st.spinner("Analyzing Resume..."):
             # Extract text and analyze
